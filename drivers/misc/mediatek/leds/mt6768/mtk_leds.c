@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2019 MediaTek Inc.
-*/
+ * Copyright (C) 2015 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ */
 
 #include <linux/module.h>
 #include <linux/platform_device.h>
@@ -36,7 +45,7 @@
 #include "mtkfb.h"
 #endif
 
-// #define MET_USER_EVENT_SUPPORT
+#define MET_USER_EVENT_SUPPORT
 #ifdef MET_USER_EVENT_SUPPORT
 #include <mt-plat/met_drv.h>
 #endif
@@ -51,6 +60,11 @@ u16 pmic_set_register_value(u32 flagname, u32 val)
 {
 	return 0;
 }
+#endif
+
+#if defined(CONFIG_KTD3136_SUPPORT) && defined(CONFIG_LM3697_SUPPORT)
+extern int ktd3137_brightness_set(int brightness);
+extern int lm3697_set_brightness(int brightness);
 #endif
 
 static DEFINE_MUTEX(leds_mutex);
@@ -73,7 +87,7 @@ static int button_flag_isink1;
 struct wakeup_source leds_suspend_lock;
 struct cust_mt65xx_led *pled_dtsi;
 
-char *leds_name[MT65XX_LED_TYPE_TOTAL] = {
+char *leds_name[TYPE_TOTAL] = {
 	"red",
 	"green",
 	"blue",
@@ -142,12 +156,9 @@ static void backlight_debug_log(int level, int mappingLevel)
 
 void mt_leds_wake_lock_init(void)
 {
-	// wakeup_source_init(&leds_suspend_lock, "leds wakelock");
+	wakeup_source_init(&leds_suspend_lock, "leds wakelock");
 }
-unsigned int *mt_get_div_array(void)
-{
-	return &div_array_hal[0];
-}
+
 struct cust_mt65xx_led *get_cust_led_dtsi(void)
 {
 	struct device_node *led_node = NULL;
@@ -156,18 +167,24 @@ struct cust_mt65xx_led *get_cust_led_dtsi(void)
 	int mode, data;
 	int pwm_config[5] = { 0 };
 
+	extern char *saved_command_line;
+	int bkl_id = 0;
+	char *bkl_ptr = (char *)strnstr(saved_command_line, ":bklic=", strlen(saved_command_line));
+	bkl_ptr += strlen(":bklic=");
+	bkl_id = simple_strtol(bkl_ptr, NULL, 10);
+
 	if (pled_dtsi)
 		goto out;
 
 	pr_info("[LED] %s pled_dtsi is null, load dts file\n", __func__);
-	pled_dtsi = kmalloc_array(MT65XX_LED_TYPE_TOTAL,
+	pled_dtsi = kmalloc_array(TYPE_TOTAL,
 			sizeof(struct cust_mt65xx_led), GFP_KERNEL);
 	if (pled_dtsi == NULL) {
 		LEDS_DEBUG("%s kmalloc fail\n", __func__);
 		goto out;
 	}
 
-	for (i = 0; i < MT65XX_LED_TYPE_TOTAL; i++) {
+	for (i = 0; i < TYPE_TOTAL; i++) {
 		char node_name[32] = "mediatek,";
 
 		if (strlen(node_name) + strlen(leds_name[i]) + 1 >
@@ -235,6 +252,16 @@ struct cust_mt65xx_led *get_cust_led_dtsi(void)
 			pled_dtsi[i].data =
 			   (long)chargepump_set_backlight_level;
 			LEDS_DEBUG("BL set by chargepump\n");
+#elif defined(CONFIG_KTD3136_SUPPORT) && defined(CONFIG_LM3697_SUPPORT)
+			printk("[%s]: *liuyundong*, bkl_id = %d\n", __func__, bkl_id);
+
+			if (bkl_id == 24) {
+				pled_dtsi[i].data = (long)ktd3137_brightness_set;
+				printk("[%s]: backlight is ktd3136 contrl!\n", __func__);
+			} else if (bkl_id == 1) {
+				pled_dtsi[i].data = (long)lm3697_set_brightness;
+				printk("[%s]: backlight is lm3697 contrl!\n", __func__);
+			}
 #else
 			pled_dtsi[i].data = (long)mtkfb_set_backlight_level;
 #endif
@@ -691,8 +718,8 @@ int mt_brightness_set_pmic(enum mt65xx_led_pmic pmic_type, u32 level, u32 div)
 		if ((button_flag_isink0 == 0) && (first_time == true)) {
 			/* sw workround for sync leds status */
 			if (button_flag_isink1 == 0)
-				// pmic_set_register_value(PMIC_ISINK_CH1_EN,
-				// 	NLED_OFF);
+				pmic_set_register_value(PMIC_ISINK_CH1_EN,
+					NLED_OFF);
 			first_time = false;
 		}
 		pmic_set_register_value(PMIC_RG_DRV_128K_CK_PDN, 0x0);
@@ -878,11 +905,17 @@ void mt_mt65xx_led_set(struct led_classdev *led_cdev, enum led_brightness level)
 
 	backlight_debug_log(led_data->level, level);
 	disp_pq_notify_backlight_changed((((1 << MT_LED_INTERNAL_LEVEL_BIT_CNT)
-					    - 1) * level + 127) / 255);
+					    - 1) * level + 127) / 2047);
 #ifdef CONFIG_MTK_AAL_SUPPORT
+#ifdef FACTORY_VERSION_ENABLE
 	disp_aal_notify_backlight_changed((((1 <<
 					MT_LED_INTERNAL_LEVEL_BIT_CNT)
 					    - 1) * level + 127) / 255);
+#else
+	disp_aal_notify_backlight_changed((((1 <<
+					MT_LED_INTERNAL_LEVEL_BIT_CNT)
+					    - 1) * level + 127) / 2047);
+#endif
 #else
 	if (led_data->cust.mode == MT65XX_LED_MODE_CUST_BLS_PWM)
 		mt_mt65xx_led_set_cust(&led_data->cust,
