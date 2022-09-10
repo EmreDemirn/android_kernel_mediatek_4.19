@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2019 MediaTek Inc.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 #ifndef __TPD_H
 #define __TPD_H
@@ -21,7 +30,6 @@
 #include <generated/autoconf.h>
 #include <linux/kobject.h>
 #include <linux/regulator/consumer.h>
-#include <linux/pinctrl/consumer.h>
 
 /*debug macros */
 #define TPD_DEBUG
@@ -61,6 +69,7 @@
 extern unsigned long TPD_RES_X;
 extern unsigned long TPD_RES_Y;
 extern int tpd_load_status;	/* 0: failed, 1: success */
+extern int tpd_init_status;	/* 0: failed, 1: success */
 extern int tpd_mode;
 extern int tpd_mode_axis;
 extern int tpd_mode_min;

@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2019 MediaTek Inc.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 #include "tpd.h"
 
@@ -64,6 +73,9 @@ module_param(tpd_em_sample_cnt, int, 0664);
 
 int tpd_load_status;
 module_param(tpd_load_status, int, 0664);
+
+int tpd_init_status;
+module_param(tpd_init_status, int, 0664);
 
 int tpd_em_asamp = 1;
 module_param(tpd_em_asamp, int, 0664);
