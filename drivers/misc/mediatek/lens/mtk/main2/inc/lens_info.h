@@ -1,6 +1,15 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2015 MediaTek Inc.
+ * Copyright (C) 2015 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  */
 
 #ifndef _MAIN_LENS_H
@@ -14,10 +23,10 @@
 
 #define AF_MAGIC 'A'
 
-#ifdef CONFIG_MACH_MT6779
-#define SUPPORT_GETTING_LENS_FOLDER_NAME 1
-#else
+#ifdef CONFIG_MACH_MT6761
 #define SUPPORT_GETTING_LENS_FOLDER_NAME 0
+#else
+#define SUPPORT_GETTING_LENS_FOLDER_NAME 1
 #endif
 
 /* AFDRV_XXXX be the same as AF_DRVNAME in (*af).c */
@@ -26,7 +35,7 @@
 #define AFDRV_AD5823AF "AD5823AF"
 #define AFDRV_AK7345AF "AK7345AF"
 #define AFDRV_AK7371AF "AK7371AF"
-#define AFDRV_AK7374AF "AK7374AF"
+#define AFDRV_BU24253AF "BU24253AF"
 #define AFDRV_BU63165AF "BU63165AF"
 #define AFDRV_BU6424AF "BU6424AF"
 #define AFDRV_BU6429AF "BU6429AF"
@@ -34,8 +43,9 @@
 #define AFDRV_BU64745GWZAF "BU64745GWZAF"
 #define AFDRV_DW9714A "DW9714A"
 #define AFDRV_DW9714AF "DW9714AF"
+#define AFDRV_DW9714VAF "DW9714VAF"
+#define AFDRV_CN3927AF "CN3927AF"
 #define AFDRV_DW9718AF "DW9718AF"
-#define AFDRV_DW9718TAF "DW9718TAF"
 #define AFDRV_DW9814AF "DW9814AF"
 #define AFDRV_FM50AF "FM50AF"
 #define AFDRV_GAF001AF "GAF001AF"
@@ -54,6 +64,7 @@
 #define AFDRV_MT9P017AF "MT9P017AF"
 #define AFDRV_OV8825AF "OV8825AF"
 #define AFDRV_WV511AAF "WV511AAF"
+
 
 #define CONVERT_CCU_TIMESTAMP 0x1000
 
@@ -165,7 +176,5 @@ struct stAF_DrvList {
 #define AFIOC_S_SETDRVINIT _IOW(AF_MAGIC, 16, u32)
 
 #define AFIOC_G_GETDRVNAME _IOWR(AF_MAGIC, 17, struct stAF_MotorName)
-
-#define AFIOC_X_CTRLPARA _IOWR(AF_MAGIC, 18, struct stAF_CtrlCmd)
 
 #endif
