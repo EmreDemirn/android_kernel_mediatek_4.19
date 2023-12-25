@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2021 MediaTek Inc.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 #include <linux/errno.h>
 #include <linux/mutex.h>
@@ -119,8 +128,7 @@ static bool mtk_is_pdc_ready(struct charger_manager *info)
 		return true;
 
 	if (info->pd_type == MTK_PD_CONNECT_PE_READY_SNK_APDO &&
-		info->enable_pe_4 == false &&
-		info->enable_pe_5 == false)
+		info->enable_pe_4 == false)
 		return true;
 
 	return false;
@@ -411,7 +419,7 @@ void mtk_pdc_get_reset_idx(struct charger_manager *info)
 void mtk_pdc_reset(struct charger_manager *info)
 {
 	struct mtk_pdc *pd = &info->pdc;
-	info->is_pdc_run = false;
+
 	chr_err("%s: reset to default profile\n", __func__);
 	mtk_pdc_init_table(info);
 	mtk_pdc_get_reset_idx(info);

@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2021 MediaTek Inc.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 #include <linux/module.h>
 #include <linux/stat.h>
@@ -10,7 +19,7 @@
 #include <linux/err.h>
 #include <linux/slab.h>
 
-#include <mt-plat/v1/charger_class.h>
+#include <mt-plat/charger_class.h>
 
 static struct class *charger_class;
 
@@ -24,7 +33,6 @@ static ssize_t charger_show_name(struct device *dev,
 		       chg_dev->props.alias_name : "anonymous");
 }
 
-/*
 static int charger_suspend(struct device *dev, pm_message_t state)
 {
 	struct charger_device *chg_dev = to_charger_device(dev);
@@ -44,7 +52,6 @@ static int charger_resume(struct device *dev)
 
 	return 0;
 }
-*/
 
 static void charger_device_release(struct device *dev)
 {
@@ -619,6 +626,14 @@ EXPORT_SYMBOL(charger_dev_set_auto_trans);
 
 int charger_dev_enable_chg_type_det(struct charger_device *chg_dev, bool en)
 {
+	if (chg_dev == NULL) {
+		pr_err("chg_dev is null\n");
+	} else if (chg_dev->ops == NULL) {
+		pr_err("chg_dev  ops is null\n");
+	} else if (chg_dev->ops->enable_chg_type_det == NULL) {
+		pr_err("chg_dev  ops enable chg type is null\n");
+	}
+
 	if (chg_dev != NULL && chg_dev->ops != NULL &&
 	    chg_dev->ops->enable_chg_type_det)
 		return chg_dev->ops->enable_chg_type_det(chg_dev, en);
@@ -626,6 +641,70 @@ int charger_dev_enable_chg_type_det(struct charger_device *chg_dev, bool en)
 	return -ENOTSUPP;
 }
 EXPORT_SYMBOL(charger_dev_enable_chg_type_det);
+
+int charger_dev_get_hvdcp_type(struct charger_device *chg_dev, u32 *type)
+{
+		if (chg_dev != NULL && chg_dev->ops != NULL &&
+					    chg_dev->ops->get_hvdcp_type)
+					return chg_dev->ops->get_hvdcp_type(chg_dev, type);
+
+			return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_get_hvdcp_type);
+
+int charger_dev_get_hvdcp_dpdm_status(
+			struct charger_device *chg_dev, bool *status)
+{
+		if (chg_dev != NULL && chg_dev->ops != NULL &&
+					    chg_dev->ops->get_hvdcp_type)
+					return chg_dev->ops->get_hvdcp_dpdm_status(chg_dev, status);
+
+			return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_get_hvdcp_dpdm_status);
+
+int charger_dev_set_hvdcp_dpdm(
+			struct charger_device *chg_dev)
+{
+		if (chg_dev != NULL && chg_dev->ops != NULL &&
+					    chg_dev->ops->get_hvdcp_type)
+					return chg_dev->ops->set_hvdcp_dpdm(chg_dev);
+
+			return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_set_hvdcp_dpdm);
+
+int charger_dev_set_suspend(struct charger_device *chg_dev, bool en)
+{
+	if (chg_dev != NULL && chg_dev->ops != NULL &&
+					    chg_dev->ops->set_suspend)
+					return chg_dev->ops->set_suspend(chg_dev, en);
+
+			return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_set_suspend);
+
+int charger_dev_enable_hvdcp_det(
+			struct charger_device *chg_dev, bool enable)
+{
+		if (chg_dev != NULL && chg_dev->ops != NULL &&
+					    chg_dev->ops->enable_hvdcp_det)
+					return chg_dev->ops->enable_hvdcp_det(chg_dev, enable);
+
+			return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_enable_hvdcp_det);
+
+int charger_dev_check_hv_charging(
+			struct charger_device *chg_dev)
+{
+		if (chg_dev != NULL && chg_dev->ops != NULL &&
+					    chg_dev->ops->check_hv_charging)
+					return chg_dev->ops->check_hv_charging(chg_dev);
+
+			return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_check_hv_charging);
 
 int charger_dev_enable_otg(struct charger_device *chg_dev, bool en)
 {
@@ -645,6 +724,26 @@ int charger_dev_enable_discharge(struct charger_device *chg_dev, bool en)
 	return -ENOTSUPP;
 }
 EXPORT_SYMBOL(charger_dev_enable_discharge);
+
+int charger_dev_set_otg_current(struct charger_device *chg_dev, u32 uA)
+{
+	if (chg_dev != NULL && chg_dev->ops != NULL &&
+	    chg_dev->ops->set_otg_current)
+		return chg_dev->ops->set_otg_current(chg_dev, uA);
+
+	return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_set_otg_current);
+
+int charger_dev_get_charger_type(struct charger_device *chg_dev, u32 *type)
+{
+	if (chg_dev != NULL && chg_dev->ops != NULL &&
+	    chg_dev->ops->get_charger_type)
+		return chg_dev->ops->get_charger_type(chg_dev, type);
+
+	return -ENOTSUPP;
+}
+EXPORT_SYMBOL(charger_dev_get_charger_type);
 
 int charger_dev_set_boost_current_limit(struct charger_device *chg_dev, u32 uA)
 {
@@ -787,15 +886,6 @@ int charger_dev_enable_bleed_discharge(struct charger_device *charger_dev,
 	return -ENOTSUPP;
 }
 EXPORT_SYMBOL(charger_dev_enable_bleed_discharge);
-
-int charger_dev_get_ext_chgtyp(struct charger_device *chg_dev)
-{
-	if (chg_dev != NULL && chg_dev->ops != NULL && chg_dev->ops->get_ext_chgtyp)
-		return chg_dev->ops->get_ext_chgtyp(chg_dev);
-
-	return -ENOTSUPP;
-}
-EXPORT_SYMBOL(charger_dev_get_ext_chgtyp);
 
 static DEVICE_ATTR(name, 0444, charger_show_name, NULL);
 
@@ -943,10 +1033,8 @@ static int __init charger_class_init(void)
 		return PTR_ERR(charger_class);
 	}
 	charger_class->dev_groups = charger_groups;
-	/*
 	charger_class->suspend = charger_suspend;
 	charger_class->resume = charger_resume;
-	*/
 	return 0;
 }
 

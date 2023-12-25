@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2021 MediaTek Inc.
-*/
+ * Copyright (C) 2017 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 #include <linux/errno.h>
 #include <linux/mutex.h>
@@ -9,8 +18,8 @@
 #include <linux/time.h>
 
 #include <mt-plat/mtk_boot.h>
-#include <mt-plat/v1/charger_type.h>
-#include <mt-plat/v1/mtk_battery.h>
+#include <mt-plat/charger_type.h>
+#include <mt-plat/mtk_battery.h>
 #include <upmu_common.h>
 #include "mtk_charger_intf.h"
 #include "mtk_charger_init.h"
@@ -249,6 +258,16 @@ void mtk_pe40_end(struct charger_manager *pinfo, int type, bool retry)
 	}
 }
 
+bool mtk_is_TA_support_pd_pps(struct charger_manager *pinfo)
+{
+	if (pinfo->enable_pe_4 == false)
+		return false;
+
+	if (pinfo->pd_type == MTK_PD_CONNECT_PE_READY_SNK_APDO)
+		return true;
+	return false;
+}
+
 void mtk_pe40_init_cap(struct charger_manager *info)
 {
 	adapter_dev_get_cap(info->pd_adapter, MTK_PD_APDO, &info->pe4.cap);
@@ -387,9 +406,9 @@ bool mtk_pe40_get_is_connect(struct charger_manager *pinfo)
 
 	if (pinfo->enable_pe_4 == false)
 		return false;
-// workaround for mt6768
-//	if ((get_boot_mode() == META_BOOT) && (get_boot_mode() == ADVMETA_BOOT))
-//		return false;
+
+	if ((get_boot_mode() == META_BOOT) && (get_boot_mode() == ADVMETA_BOOT))
+		return false;
 
 	return pinfo->pe4.is_connect;
 }
@@ -797,8 +816,6 @@ int mtk_pe40_init_state(struct charger_manager *pinfo)
 	voltage = 0;
 	mtk_pe40_get_setting_by_watt(pinfo, &voltage, &adapter_ibus,
 				&actual_current, watt, &input_current);
-	if (voltage <= 0)
-		chr_err("abnormal voltage: %d\n", voltage);
 	pe40->avbus = voltage / 10 * 10;
 	ret = mtk_pe40_pd_request(pinfo, &pe40->avbus, &adapter_ibus,
 				input_current);
@@ -810,10 +827,7 @@ int mtk_pe40_init_state(struct charger_manager *pinfo)
 	}
 
 	pe40->avbus = voltage;
-	if (voltage > 0)
-		pe40->ibus = watt / voltage;
-	else
-		pe40->ibus = 0;
+	pe40->ibus = watt / voltage;
 	pe40->watt = watt;
 
 	swchgalg->state = CHR_PE40_CC;
@@ -964,11 +978,6 @@ int mtk_pe40_cc_state(struct charger_manager *pinfo)
 
 	if (pinfo->enable_hv_charging == false)
 		goto disable_hv;
-	if (pinfo->pd_reset == true) {
-		chr_err("encounter hard reset, stop pe4.0\n");
-		pinfo->pd_reset = false;
-		goto retry;
-	}
 
 	pdata = &pinfo->chg1_data;
 	pe40 = &pinfo->pe4;
@@ -1113,7 +1122,6 @@ int mtk_pe40_cc_state(struct charger_manager *pinfo)
 
 	return 0;
 
-retry:
 disable_hv:
 	mtk_pe40_end(pinfo, 0, true);
 	return 0;

@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2021 MediaTek Inc.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 #include <linux/module.h>
 #include <linux/stat.h>
@@ -24,7 +33,6 @@ static ssize_t adapter_show_name(struct device *dev,
 		       adapter_dev->props.alias_name : "anonymous");
 }
 
-/*
 static int adapter_suspend(struct device *dev, pm_message_t state)
 {
 	struct adapter_device *adapter_dev = to_adapter_device(dev);
@@ -44,7 +52,6 @@ static int adapter_resume(struct device *dev)
 
 	return 0;
 }
-*/
 
 static void adapter_device_release(struct device *dev)
 {
@@ -181,7 +188,7 @@ struct adapter_device *adapter_device_register(const char *name,
 	adapter_dev->dev.parent = parent;
 	adapter_dev->dev.release = adapter_device_release;
 	adapter_name = kasprintf(GFP_KERNEL, "%s", name);
-	dev_set_name(&adapter_dev->dev, adapter_name);
+	dev_set_name(&adapter_dev->dev, "%s", adapter_name);
 	dev_set_drvdata(&adapter_dev->dev, devdata);
 	kfree(adapter_name);
 
@@ -257,10 +264,8 @@ static int __init adapter_class_init(void)
 		return PTR_ERR(adapter_class);
 	}
 	adapter_class->dev_groups = adapter_groups;
-	/*
 	adapter_class->suspend = adapter_suspend;
 	adapter_class->resume = adapter_resume;
-	*/
 	return 0;
 }
 

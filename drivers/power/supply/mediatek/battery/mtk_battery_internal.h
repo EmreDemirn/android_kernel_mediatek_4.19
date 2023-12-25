@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2021 MediaTek Inc.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 #ifndef __MTK_BATTERY_INTF_H__
 #define __MTK_BATTERY_INTF_H__
@@ -44,7 +53,8 @@
 #define SHUTDOWN_TIME 40
 #define AVGVBAT_ARRAY_SIZE 30
 #define INIT_VOLTAGE 3450
-#define BATTERY_SHUTDOWN_TEMPERATURE 60
+
+#define BATTERY_SHUTDOWN_TEMPERATURE 61
 
 /* ============================================================ */
 /* typedef and Struct*/
@@ -607,7 +617,8 @@ struct FUELGAUGE_PROFILE_STRUCT {
 	unsigned int mah;
 	unsigned short voltage;
 	unsigned short resistance; /* Ohm*/
-	unsigned int percentage;
+	unsigned short resistance2; /* Ohm*/
+	unsigned short percentage;
 	struct FUELGAUGE_CHARGER_STRUCT charge_r;
 };
 
@@ -659,6 +670,12 @@ struct battery_data {
 	/* Add for Battery Service */
 	int BAT_batt_vol;
 	int BAT_batt_temp;
+};
+
+struct bms_data {
+	struct power_supply_desc psd;
+	struct power_supply *psy;
+	struct power_supply_config cfg;
 };
 
 struct BAT_EC_Struct {
@@ -780,9 +797,6 @@ struct mtk_battery {
 	int battery_id;
 
 	struct zcv_filter zcvf;
-
-/*boot mode*/
-	int boot_mode;
 
 /*simulator log*/
 	struct simulator_log log;
@@ -921,7 +935,7 @@ struct mtk_battery {
 	int sw_iavg_gap;
 
 	/*sw low battery interrupt*/
-	struct lbat_user *lowbat_service;
+	struct lbat_user lowbat_service;
 	int sw_low_battery_ht_en;
 	int sw_low_battery_ht_threshold;
 	int sw_low_battery_lt_en;
@@ -986,6 +1000,8 @@ extern void bmd_ctrl_cmd_from_user(void *nl_data, struct fgd_nl_msg_t *ret_msg);
 extern int interpolation(int i1, int b1, int i2, int b2, int i);
 extern struct mtk_battery *get_mtk_battery(void);
 extern void battery_update_psd(struct battery_data *bat_data);
+extern int wakeup_fg_algo(unsigned int flow_state);
+extern int wakeup_fg_algo_cmd(unsigned int flow_state, int cmd, int para1);
 extern int wakeup_fg_algo_atomic(unsigned int flow_state);
 extern unsigned int TempToBattVolt(int temp, int update);
 extern int fg_get_battery_temperature_for_zcv(void);
@@ -1067,9 +1083,6 @@ extern int gauge_enable_interrupt(int intr_number, int en);
 /* GM25 Plug out API */
 int en_intr_VBATON_UNDET(int en);
 int reg_VBATON_UNDET(void (*callback)(void));
-
-/* boot mode */
-int battery_get_boot_mode(void);
 
 /* zcvf */
 int zcv_filter_add(struct zcv_filter *zf);
