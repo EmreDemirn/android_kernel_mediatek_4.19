@@ -1,7 +1,17 @@
-// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
  */
+
 
 #define pr_fmt(fmt) "[ALS/PS] " fmt
 
@@ -37,7 +47,7 @@ struct alspshub_ipi_data {
 	bool ps_factory_enable;
 	bool als_android_enable;
 	bool ps_android_enable;
-	struct wakeup_source *ps_wake_lock;
+	struct wakeup_source ps_wake_lock;
 };
 
 static struct alspshub_ipi_data *obj_ipi_data;
@@ -323,7 +333,7 @@ static int ps_recv_data(struct data_unit_t *event, void *reserved)
 		err = ps_flush_report();
 	else if (event->flush_action == DATA_ACTION &&
 			READ_ONCE(obj->ps_android_enable) == true) {
-		__pm_wakeup_event(obj->ps_wake_lock, msecs_to_jiffies(100));
+		__pm_wakeup_event(&obj->ps_wake_lock, msecs_to_jiffies(100));
 		err = ps_data_report_t(event->proximity_t.oneshot,
 			SENSOR_STATUS_ACCURACY_HIGH,
 			(int64_t)event->time_stamp);
@@ -443,6 +453,19 @@ static int alshub_factory_set_cali(int32_t offset)
 	return err;
 
 }
+
+
+static int alshub_factory_set_cali_0lux(int32_t offset)
+{
+	int err = 0;
+	int32_t cfg_data;
+
+	cfg_data = offset;
+	als_0lux_cali_report(&cfg_data);
+	return err;
+
+}
+
 static int alshub_factory_get_cali(int32_t *offset)
 {
 	struct alspshub_ipi_data *obj = obj_ipi_data;
@@ -450,6 +473,21 @@ static int alshub_factory_get_cali(int32_t *offset)
 	*offset = atomic_read(&obj->als_cali);
 	return 0;
 }
+
+static int pshub_factory_set_factory_flag(int32_t flag)
+{
+	int res = 0;
+
+	res = sensor_set_cmd_to_hub(ID_PROXIMITY, CUST_ACTION_SET_FACTORY, &flag);
+	if (res < 0) {
+		pr_err("sensor_set_cmd_to_hub fail,(ID: %d),(action: %d)\n",
+			ID_PROXIMITY, CUST_ACTION_SET_FACTORY);
+		return 0;
+	}
+
+	return res;
+}
+
 static int pshub_factory_enable_sensor(bool enable_disable,
 			int64_t sample_periods_ms)
 {
@@ -591,7 +629,9 @@ static struct alsps_factory_fops alspshub_factory_fops = {
 	.als_clear_cali = alshub_factory_clear_cali,
 	.als_set_cali = alshub_factory_set_cali,
 	.als_get_cali = alshub_factory_get_cali,
+	.als_set_cali_0lux = alshub_factory_set_cali_0lux,
 
+	.ps_set_factory_flag = pshub_factory_set_factory_flag,
 	.ps_enable_sensor = pshub_factory_enable_sensor,
 	.ps_get_data = pshub_factory_get_data,
 	.ps_get_raw_data = pshub_factory_get_raw_data,
@@ -979,12 +1019,7 @@ static int alspshub_probe(struct platform_device *pdev)
 		pr_err("tregister fail = %d\n", err);
 		goto exit_create_attr_failed;
 	}
-	obj->ps_wake_lock = wakeup_source_register(NULL, "ps_wake_lock");
-	if (!obj->ps_wake_lock) {
-		pr_err("wakeup source init fail\n");
-		err = -ENOMEM;
-		goto exit_create_attr_failed;
-	}
+	wakeup_source_init(&obj->ps_wake_lock, "ps_wake_lock");
 
 	alspshub_init_flag = 0;
 	pr_debug("%s: OK\n", __func__);
@@ -1006,10 +1041,7 @@ static int alspshub_remove(struct platform_device *pdev)
 	int err = 0;
 	struct platform_driver *paddr =
 			alspshub_init_info.platform_diver_addr;
-	struct alspshub_ipi_data *obj = obj_ipi_data;
 
-	if (obj)
-		wakeup_source_unregister(obj->ps_wake_lock);
 	err = alspshub_delete_attr(&paddr->driver);
 	if (err)
 		pr_err("alspshub_delete_attr fail: %d\n", err);

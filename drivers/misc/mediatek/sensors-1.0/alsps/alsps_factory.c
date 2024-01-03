@@ -1,6 +1,15 @@
-// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
  */
 
 #define pr_fmt(fmt) "<ALS/PS> " fmt
@@ -147,6 +156,39 @@ static long alsps_factory_unlocked_ioctl(struct file *file, unsigned int cmd,
 			return -EINVAL;
 		}
 		return 0;
+
+    case ALSPS_ALS_SET_CALI_0LUX:
+		if (copy_from_user(&als_cali, ptr, sizeof(als_cali)))
+			return -EFAULT;
+		if (alsps_factory.fops != NULL &&
+		    alsps_factory.fops->als_set_cali_0lux != NULL) {
+			err = alsps_factory.fops->als_set_cali_0lux(als_cali);
+			if (err < 0) {
+				pr_err("ALSPS_ALS_SET_CALI FAIL!\n");
+				return -EINVAL;
+			}
+		} else {
+			pr_err("ALSPS_ALS_SET_CALI NULL\n");
+			return -EINVAL;
+		}
+		return 0;
+
+	case ALSPS_SET_PS_FACTORY_FLAG:
+		if (copy_from_user(&data, ptr, sizeof(data)))
+			return -EFAULT;
+		if (alsps_factory.fops != NULL &&
+		    alsps_factory.fops->ps_set_factory_flag != NULL) {
+			err = alsps_factory.fops->ps_set_factory_flag(data);
+			if (err < 0) {
+				pr_err("ALSPS_SET_PS_FACTORY_FLAG FAIL!\n");
+				return -EINVAL;
+			}
+		} else {
+			pr_err("ALSPS_SET_PS_FACTORY_FLAG NULL\n");
+			return -EINVAL;
+		}
+		return 0;
+
 	case ALSPS_GET_PS_TEST_RESULT:
 		if (alsps_factory.fops != NULL &&
 		    alsps_factory.fops->ps_get_data != NULL) {

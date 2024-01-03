@@ -1,6 +1,15 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
  */
 
 #ifndef __ALSPS_FACTORY_H__
@@ -40,7 +49,8 @@ struct alsps_factory_fops {
 	int (*als_clear_cali)(void);
 	int (*als_set_cali)(int32_t offset);
 	int (*als_get_cali)(int32_t *offset);
-
+	int (*als_set_cali_0lux)(int32_t offset);
+	int (*ps_set_factory_flag)(int32_t flag);
 	int (*ps_enable_sensor)(bool enable_disable, int64_t sample_periods_ms);
 	int (*ps_get_data)(int32_t *data);
 	int (*ps_get_raw_data)(int32_t *data);

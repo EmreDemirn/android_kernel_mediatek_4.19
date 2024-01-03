@@ -1,16 +1,26 @@
-// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
  */
 
 #define pr_fmt(fmt) "<ALS/PS> " fmt
 
 #include "inc/alsps.h"
 #include "inc/aal_control.h"
+#include <SCP_sensorHub.h>
 struct alsps_context *alsps_context_obj /* = NULL*/;
 struct platform_device *pltfm_dev;
 int last_als_report_data = -1;
-
+static int g_screen_info;
 /* AAL default delay timer(nano seconds)*/
 #define AAL_DELAY 200000000
 
@@ -35,7 +45,8 @@ int als_data_report_t(int value, int status, int64_t time_stamp)
 		err = sensor_input_event(cxt->als_mdev.minor, &event);
 		cxt->is_get_valid_als_data_after_enable = true;
 	}
-	if (value != last_als_report_data) {
+
+	if (1) {
 		event.handle = ID_LIGHT;
 		event.flush_action = DATA_ACTION;
 		event.word[0] = value;
@@ -44,6 +55,7 @@ int als_data_report_t(int value, int status, int64_t time_stamp)
 		if (err >= 0)
 			last_als_report_data = value;
 	}
+
 	return err;
 }
 int als_data_report(int value, int status)
@@ -62,6 +74,21 @@ int als_cali_report(int *value)
 	err = sensor_input_event(alsps_context_obj->als_mdev.minor, &event);
 	return err;
 }
+
+int als_0lux_cali_report(int *value)
+{
+	int err = 0;
+	struct sensor_event event;
+
+	memset(&event, 0, sizeof(struct sensor_event));
+	event.handle = ID_LIGHT;
+	event.flush_action = CALI_0LUX_ACTION;
+	event.word[0] = value[0];
+	err = sensor_input_event(alsps_context_obj->als_mdev.minor, &event);
+	return err;
+}
+
+
 
 int als_flush_report(void)
 {
@@ -145,6 +172,21 @@ int ps_cali_report(int *value)
 	err = sensor_input_event(alsps_context_obj->ps_mdev.minor, &event);
 	return err;
 }
+
+// new add for sec cal
+int ps_sec_cali_report(int value)
+{
+	int err = 0;
+	struct sensor_event event;
+	printk("zch---ps_sec_cali_report\n");
+	memset(&event, 0, sizeof(struct sensor_event));
+
+	event.flush_action = CALI_SEC_ACTION;
+	event.word[0] = value;
+	err = sensor_input_event(alsps_context_obj->ps_mdev.minor, &event);
+	return err;
+}
+
 
 int ps_flush_report(void)
 {
@@ -262,17 +304,17 @@ ps_loop:
 	}
 }
 
-static void als_poll(struct timer_list *t)
+static void als_poll(unsigned long data)
 {
-	struct alsps_context *obj = from_timer(obj, t, timer_als);
+	struct alsps_context *obj = (struct alsps_context *)data;
 
 	if ((obj != NULL) && (obj->is_als_polling_run))
 		schedule_work(&obj->report_als);
 }
 
-static void ps_poll(struct timer_list *t)
+static void ps_poll(unsigned long data)
 {
-	struct alsps_context *obj = from_timer(obj, t, timer_ps);
+	struct alsps_context *obj = (struct alsps_context *)data;
 
 	if (obj != NULL)
 		schedule_work(&obj->report_ps);
@@ -294,13 +336,17 @@ static struct alsps_context *alsps_context_alloc_object(void)
 	atomic_set(&obj->wake, 0);
 	INIT_WORK(&obj->report_als, als_work_func);
 	INIT_WORK(&obj->report_ps, ps_work_func);
-	timer_setup(&obj->timer_als, als_poll, 0);
-	timer_setup(&obj->timer_ps, ps_poll, 0);
+	init_timer(&obj->timer_als);
+	init_timer(&obj->timer_ps);
 	obj->timer_als.expires =
 		jiffies + atomic_read(&obj->delay_als) / (1000 / HZ);
+	obj->timer_als.function = als_poll;
+	obj->timer_als.data = (unsigned long)obj;
 
 	obj->timer_ps.expires =
 		jiffies + atomic_read(&obj->delay_ps) / (1000 / HZ);
+	obj->timer_ps.function = ps_poll;
+	obj->timer_ps.data = (unsigned long)obj;
 
 	obj->is_als_first_data_after_enable = false;
 	obj->is_als_polling_run = false;
@@ -409,7 +455,7 @@ static int als_enable_and_batch(void)
 }
 #endif
 
-static ssize_t alsactive_store(struct device *dev,
+static ssize_t als_store_active(struct device *dev,
 				struct device_attribute *attr, const char *buf,
 				size_t count)
 {
@@ -488,7 +534,7 @@ err_out:
 		return count;
 }
 /*----------------------------------------------------------------------------*/
-static ssize_t alsactive_show(struct device *dev,
+static ssize_t als_show_active(struct device *dev,
 			       struct device_attribute *attr, char *buf)
 {
 	struct alsps_context *cxt = NULL;
@@ -500,7 +546,7 @@ static ssize_t alsactive_show(struct device *dev,
 	return snprintf(buf, PAGE_SIZE, "%d\n", div);
 }
 
-static ssize_t alsbatch_store(struct device *dev,
+static ssize_t als_store_batch(struct device *dev,
 				struct device_attribute *attr, const char *buf,
 				size_t count)
 {
@@ -547,13 +593,13 @@ static ssize_t alsbatch_store(struct device *dev,
 		return count;
 }
 
-static ssize_t alsbatch_show(struct device *dev,
+static ssize_t als_show_batch(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", 0);
 }
 
-static ssize_t alsflush_store(struct device *dev,
+static ssize_t als_store_flush(struct device *dev,
 			       struct device_attribute *attr, const char *buf,
 			       size_t count)
 {
@@ -590,18 +636,18 @@ static ssize_t alsflush_store(struct device *dev,
 		return count;
 }
 
-static ssize_t alsflush_show(struct device *dev,
+static ssize_t als_show_flush(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", 0);
 }
 /* need work around again */
-static ssize_t alsdevnum_show(struct device *dev,
+static ssize_t als_show_devnum(struct device *dev,
 			       struct device_attribute *attr, char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", 0);
 }
-static ssize_t alscali_store(struct device *dev,
+static ssize_t als_store_cali(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
 {
 	struct alsps_context *cxt = NULL;
@@ -634,18 +680,18 @@ static int ps_enable_and_batch(void)
 	if (cxt->ps_power == 1 && cxt->ps_enable == 0) {
 		pr_debug("PS disable\n");
 /* stop polling firstly, if needed */
-/*
- *		if (cxt->ps_ctl.is_report_input_direct == false
- *			&& cxt->is_ps_polling_run == true) {
- *			smp_mb();// for memory barrier
- *			del_timer_sync(&cxt->timer_ps);
- *			smp_mb();// for memory barrier
- *			cancel_work_sync(&cxt->report_ps);
- *			cxt->drv_data.ps_data.values[0] = ALSPS_INVALID_VALUE;
- *			cxt->is_ps_polling_run = false;
- *			pr_debug("ps stop polling done\n");
- *		}
- */
+#if 0
+		if (cxt->ps_ctl.is_report_input_direct == false
+			&& cxt->is_ps_polling_run == true) {
+			smp_mb();/* for memory barrier */
+			del_timer_sync(&cxt->timer_ps);
+			smp_mb();/* for memory barrier */
+			cancel_work_sync(&cxt->report_ps);
+			cxt->drv_data.ps_data.values[0] = ALSPS_INVALID_VALUE;
+			cxt->is_ps_polling_run = false;
+			pr_debug("ps stop polling done\n");
+		}
+#endif
 		/* turn off the ps_power */
 		err = cxt->ps_ctl.enable_nodata(0);
 		if (err) {
@@ -687,28 +733,31 @@ static int ps_enable_and_batch(void)
 		}
 		pr_debug("ps set ODR, fifo latency done\n");
 /* start polling, if needed */
-/*		if (cxt->ps_ctl.is_report_input_direct == false) {
- *			int mdelay = cxt->ps_delay_ns;
- *
- *			do_div(mdelay, 1000000);
- *			atomic_set(&cxt->delay_ps, mdelay);
- *			if (cxt->is_ps_polling_run == false) {
- *				mod_timer(&cxt->timer_ps, jiffies +
- *					atomic_read(&cxt->delay_ps)/(1000/HZ));
- *				cxt->is_ps_polling_run = true;
- *				cxt->is_ps_first_data_after_enable = true;
- *			}
- *		pr_debug("ps delay %d ms\n", atomic_read(&cxt->delay_ps));
- *		} else {
- *			ps_data_report(1, 3);
- *		}
- */
+#if 0
+		if (cxt->ps_ctl.is_report_input_direct == false) {
+			int mdelay = cxt->ps_delay_ns;
+
+			do_div(mdelay, 1000000);
+			atomic_set(&cxt->delay_ps, mdelay);
+			/* the first sensor start polling timer */
+			if (cxt->is_ps_polling_run == false) {
+				mod_timer(&cxt->timer_ps, jiffies +
+					atomic_read(&cxt->delay_ps)/(1000/HZ));
+				cxt->is_ps_polling_run = true;
+				cxt->is_ps_first_data_after_enable = true;
+			}
+		pr_debug("ps delay %d ms\n", atomic_read(&cxt->delay_ps));
+		} else {
+			/* report an default value firstly */
+			ps_data_report(1, 3);
+		}
+#endif
 		pr_debug("PS batch done\n");
 	}
 	return 0;
 }
 #endif
-static ssize_t psactive_store(struct device *dev,
+static ssize_t ps_store_active(struct device *dev,
 			       struct device_attribute *attr, const char *buf,
 			       size_t count)
 {
@@ -741,7 +790,7 @@ err_out:
 		return count;
 }
 /*----------------------------------------------------------------------------*/
-static ssize_t psactive_show(struct device *dev, struct device_attribute *attr,
+static ssize_t ps_show_active(struct device *dev, struct device_attribute *attr,
 			      char *buf)
 {
 	struct alsps_context *cxt = NULL;
@@ -753,7 +802,7 @@ static ssize_t psactive_show(struct device *dev, struct device_attribute *attr,
 	return snprintf(buf, PAGE_SIZE, "%d\n", div);
 }
 
-static ssize_t psbatch_store(struct device *dev, struct device_attribute *attr,
+static ssize_t ps_store_batch(struct device *dev, struct device_attribute *attr,
 			      const char *buf, size_t count)
 {
 	struct alsps_context *cxt = alsps_context_obj;
@@ -785,13 +834,13 @@ static ssize_t psbatch_store(struct device *dev, struct device_attribute *attr,
 		return count;
 }
 
-static ssize_t psbatch_show(struct device *dev, struct device_attribute *attr,
+static ssize_t ps_show_batch(struct device *dev, struct device_attribute *attr,
 			     char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", 0);
 }
 
-static ssize_t psflush_store(struct device *dev, struct device_attribute *attr,
+static ssize_t ps_store_flush(struct device *dev, struct device_attribute *attr,
 			      const char *buf, size_t count)
 {
 	struct alsps_context *cxt = NULL;
@@ -816,19 +865,19 @@ static ssize_t psflush_store(struct device *dev, struct device_attribute *attr,
 		return count;
 }
 
-static ssize_t psflush_show(struct device *dev, struct device_attribute *attr,
+static ssize_t ps_show_flush(struct device *dev, struct device_attribute *attr,
 			     char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", 0);
 }
 /* need work around again */
-static ssize_t psdevnum_show(struct device *dev, struct device_attribute *attr,
+static ssize_t ps_show_devnum(struct device *dev, struct device_attribute *attr,
 			      char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", 0);
 }
 
-static ssize_t pscali_store(struct device *dev, struct device_attribute *attr,
+static ssize_t ps_store_cali(struct device *dev, struct device_attribute *attr,
 				  const char *buf, size_t count)
 {
 	struct alsps_context *cxt = NULL;
@@ -974,25 +1023,107 @@ int ps_report_interrupt_data(int value)
 
 	return 0;
 }
+
+ //new add by zch for get lcm info
+static ssize_t als_store_screen_info(struct device *dev,
+			       struct device_attribute *attr, const char *buf,
+			       size_t count)
+{
+    int res = 0;
+
+    res = sensor_set_cmd_to_hub(ID_LIGHT, CUST_ACTION_LCM_INFO, &g_screen_info);
+    if (res < 0) {
+    pr_err("sensor_set_cmd_to_hub fail,(ID: %d),(action: %d)\n",
+    ID_PROXIMITY, CUST_ACTION_LCM_INFO);
+    return 0;
+    }
+    printk("ps_store_screen_info send g_screen_info =%d\n ", g_screen_info);
+    return count;
+  }
+
+
+static ssize_t als_show_screen_info(struct device *dev, struct device_attribute *attr,
+			      char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%d\n", g_screen_info);
+}
+
+static int __init early_lcm_name(char *p)
+{
+    if (memcmp(p, "ft8719", 6) == 0) {
+    printk("LCM_name=ft8719_fhdp_dsi_vdo_xinli_lcm_drv g_screen_info = 1\n");
+    g_screen_info = 2;
+    } else if (memcmp(p, "nt36672", 7) == 0) {
+    printk("LCM_name=nt36672A_fhdp_dsi_vdo_tianma_lcm_drv, g_screen_info = 2\n");
+    g_screen_info = 1;
+    } else
+    printk("LCM_name = unknow,\n");
+    return 0;
+}
+early_param("LCM_name", early_lcm_name);
+
+
+
+ // end
+
+
+ //new add by zch for sec cal
+static ssize_t pscali_sec_store_cali(struct device *dev,
+			       struct device_attribute *attr, const char *buf,
+			       size_t count)
+{
+    int data = 0;
+    sscanf(buf, "%d", &data);
+    printk("zch---pscali_sec_store_cali  ct=%d\n", data);
+    // sec cali
+    ps_sec_cali_report(data);
+    return count;
+     }
+
+ static ssize_t update_cali_data_store_cali(struct device *dev,
+			       struct device_attribute *attr, const char *buf,
+			       size_t count)
+{
+    int data, res = 0;
+    sscanf(buf, "%d", &data);
+    printk("update_cali_data_store_cali  ct=%d\n", data);
+
+     res = sensor_set_cmd_to_hub(ID_PROXIMITY, CUST_ACTION_SEC_PCAL, &data);
+    if (res < 0) {
+    pr_err("sensor_set_cmd_to_hub fail,(ID: %d),(action: %d)\n",
+    ID_PROXIMITY, CUST_ACTION_SEC_PCAL);
+    return 0;
+    }
+    printk("zch---update_cali_data_store_cali send new CT =%d\n ", data);
+    return count;
+     }
+
+//end
+
+
+
 /*----------------------------------------------------------------------------*/
 EXPORT_SYMBOL_GPL(ps_report_interrupt_data);
-DEVICE_ATTR_RW(alsactive);
-DEVICE_ATTR_RW(alsbatch);
-DEVICE_ATTR_RW(alsflush);
-DEVICE_ATTR_RO(alsdevnum);
-DEVICE_ATTR_WO(alscali);
-DEVICE_ATTR_RW(psactive);
-DEVICE_ATTR_RW(psbatch);
-DEVICE_ATTR_RW(psflush);
-DEVICE_ATTR_RO(psdevnum);
-DEVICE_ATTR_WO(pscali);
-
+DEVICE_ATTR(alsactive, 0644, als_show_active, als_store_active);
+DEVICE_ATTR(alsbatch, 0644, als_show_batch, als_store_batch);
+DEVICE_ATTR(alsflush, 0644, als_show_flush, als_store_flush);
+DEVICE_ATTR(alsdevnum, 0644, als_show_devnum, NULL);
+DEVICE_ATTR(alscali, 0644, NULL, als_store_cali);
+DEVICE_ATTR(psactive, 0644, ps_show_active, ps_store_active);
+DEVICE_ATTR(psbatch, 0644, ps_show_batch, ps_store_batch);
+DEVICE_ATTR(psflush, 0644, ps_show_flush, ps_store_flush);
+DEVICE_ATTR(psdevnum, 0644, ps_show_devnum, NULL);
+DEVICE_ATTR(pscali, 0644, NULL, ps_store_cali);
+DEVICE_ATTR(pscali_sec, 0644, NULL, pscali_sec_store_cali);  //new add
+DEVICE_ATTR(update_cali_data, 0644, NULL, update_cali_data_store_cali);  //new add
+DEVICE_ATTR(screen_info, 0644, als_show_screen_info, als_store_screen_info);
 static struct attribute *als_attributes[] = {
 	&dev_attr_alsactive.attr,
 	&dev_attr_alsbatch.attr,
 	&dev_attr_alsflush.attr,
 	&dev_attr_alsdevnum.attr,
 	&dev_attr_alscali.attr,
+	&dev_attr_screen_info.attr,
 	NULL
 };
 
@@ -1002,6 +1133,8 @@ static struct attribute *ps_attributes[] = {
 	&dev_attr_psflush.attr,
 	&dev_attr_psdevnum.attr,
 	&dev_attr_pscali.attr,
+	&dev_attr_pscali_sec.attr,  //new add
+	&dev_attr_update_cali_data.attr, //new add
 	NULL
 };
 
@@ -1272,8 +1405,6 @@ static int alsps_remove(void)
 	if (err)
 		pr_err("misc_deregister fail: %d\n", err);
 	kfree(alsps_context_obj);
-
-	platform_driver_unregister(&als_ps_driver);
 
 	return 0;
 }
