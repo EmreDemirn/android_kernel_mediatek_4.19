@@ -1,7 +1,15 @@
-/* 
- * SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (C) 2016 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
- * Copyright (c) 2019 MediaTek Inc.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
  */
 
 #include <linux/of.h>
@@ -20,11 +28,6 @@ static int kpd_enable_lprst = 1;
 static u16 kpd_keymap_state[KPD_NUM_MEMS] = {
 	0xffff, 0xffff, 0xffff, 0xffff, 0x00ff
 };
-
-unsigned int get_boot_mode(void)
-{
-	return 0;
-}
 
 static void enable_kpd(int enable)
 {
@@ -47,6 +50,19 @@ void kpd_get_keymap_state(u16 state[])
 	kpd_print(KPD_SAY "register = %x %x %x %x %x\n",
 		state[0], state[1], state[2], state[3], state[4]);
 
+}
+
+void long_press_reboot(unsigned long long_press_is_reboot)
+{
+	if (long_press_is_reboot == 0) {
+		kpd_info("disable  LPRST\n");
+		pmic_set_register_value(PMIC_RG_PWRKEY_RST_EN, 0x00);
+		pmic_set_register_value(PMIC_RG_HOMEKEY_RST_EN, 0x00);
+	} else {
+		long_press_reboot_function_setting();
+	}
+
+	return;
 }
 
 /********************************************************************/
