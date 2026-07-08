@@ -185,7 +185,9 @@ void Charger_Detect_Init(void)
 	/* wait 50 usec. */
 	udelay(50);
 
-	phy_set_mode_ext(glue->phy, PHY_MODE_USB_DEVICE, PHY_MODE_BC11_SW_SET);
+	if (glue && glue->phy)
+		phy_set_mode_ext(glue->phy, PHY_MODE_USB_DEVICE,
+			PHY_MODE_BC11_SW_SET);
 
 	usb_prepare_enable_clock(false);
 
@@ -197,7 +199,9 @@ void Charger_Detect_Release(void)
 {
 	usb_prepare_enable_clock(true);
 
-	phy_set_mode_ext(glue->phy, PHY_MODE_USB_DEVICE, PHY_MODE_BC11_SW_CLR);
+	if (glue && glue->phy)
+		phy_set_mode_ext(glue->phy, PHY_MODE_USB_DEVICE,
+			PHY_MODE_BC11_SW_CLR);
 
 	udelay(1);
 
@@ -212,6 +216,9 @@ bool in_uart_mode;
 bool usb_phy_check_in_uart_mode(void)
 {
 	int mode;
+
+	if (!glue || !glue->phy)
+		return false;
 
 	usb_enable_clock(true);
 	udelay(50);
@@ -246,6 +253,9 @@ void usb_phy_switch_to_uart(void)
 
 	udelay(50);
 
+	if (!glue || !glue->phy)
+		return;
+
 	/* set PHY UART mode */
 	phy_set_mode(glue->phy, PHY_MODE_UART);
 
@@ -266,6 +276,9 @@ void usb_phy_switch_to_usb(void)
 	/* GPIO Selection */
 	val = readl(ap_gpio_base);
 	writel(val & (~(GPIO_SEL_MASK)), ap_gpio_base);
+
+	if (!glue || !glue->phy)
+		return;
 
 	/* set UART mode to USB */
 	phy_set_mode(glue->phy, PHY_MODE_USB_OTG);
@@ -1714,9 +1727,11 @@ static int __init mt_usb_init(struct musb *musb)
 	musb->fifo_size = 8 * 1024;
 	musb->usb_lock = wakeup_source_register(NULL, "USB suspend lock");
 
-	ret = phy_init(glue->phy);
-	if (ret)
-		goto err_phy_init;
+	if (glue->phy) {
+		ret = phy_init(glue->phy);
+		if (ret)
+			goto err_phy_init;
+	}
 
 #ifdef CONFIG_MTK_UART_USB_SWITCH
 	in_uart_mode = usb_phy_check_in_uart_mode();
@@ -1725,9 +1740,10 @@ static int __init mt_usb_init(struct musb *musb)
 		DBG(0, "At UART mode. Switch to USB is not support\n");
 	}
 #endif
-	phy_set_mode(glue->phy, glue->phy_mode);
+	if (glue->phy)
+		phy_set_mode(glue->phy, glue->phy_mode);
 
-	if (glue->phy_mode != PHY_MODE_UART)
+	if (glue->phy && glue->phy_mode != PHY_MODE_UART)
 		ret = phy_power_on(glue->phy);
 
 	if (ret)
@@ -1818,7 +1834,8 @@ static int __init mt_usb_init(struct musb *musb)
 #endif
 	return 0;
 err_phy_power_on:
-	phy_exit(glue->phy);
+	if (glue->phy)
+		phy_exit(glue->phy);
 err_phy_init:
 
 	return ret;
@@ -1844,8 +1861,10 @@ static int mt_usb_exit(struct musb *musb)
 #ifdef CONFIG_USB_MTK_OTG
 	mt_usb_otg_exit(musb);
 #endif
-	phy_power_off(glue->phy);
-	phy_exit(glue->phy);
+	if (glue->phy) {
+		phy_power_off(glue->phy);
+		phy_exit(glue->phy);
+	}
 	return 0;
 }
 
@@ -1923,11 +1942,19 @@ static int mt_usb_probe(struct platform_device *pdev)
 		goto err1;
 	}
 
+	usb_phy_base = of_iomap(np, 1);
+	if (!usb_phy_base)
+		dev_warn(&pdev->dev, "fail to iomap usb phy base\n");
+
 	glue->phy = devm_of_phy_get_by_index(&pdev->dev, np, 0);
 	if (IS_ERR(glue->phy)) {
-		dev_err(&pdev->dev, "fail to getting phy %ld\n",
-			PTR_ERR(glue->phy));
-		return PTR_ERR(glue->phy);
+		ret = PTR_ERR(glue->phy);
+		if (ret == -EPROBE_DEFER)
+			return ret;
+
+		dev_warn(&pdev->dev, "fail to getting phy %d, use legacy fallback\n",
+			ret);
+		glue->phy = NULL;
 	}
 
 	glue->usb_phy = usb_phy_generic_register();
