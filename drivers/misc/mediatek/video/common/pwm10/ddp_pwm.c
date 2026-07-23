@@ -82,7 +82,7 @@ static atomic_t g_pwm_backlight[PWM_TOTAL_MODULE_NUM] = {
 static atomic_t g_pwm_en[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(-1), ATOMIC_INIT(-1) };
 static atomic_t g_pwm_max_backlight[PWM_TOTAL_MODULE_NUM] = {
-	ATOMIC_INIT(1023), ATOMIC_INIT(1023) };
+	ATOMIC_INIT(2047), ATOMIC_INIT(2047) };
 static atomic_t g_pwm_is_power_on[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(0), ATOMIC_INIT(0) };
 static atomic_t g_pwm_value_before_power_off[PWM_TOTAL_MODULE_NUM] = {
@@ -101,7 +101,7 @@ static atomic_t g_pwm_is_change_state[PWM_TOTAL_MODULE_NUM] = {
 static atomic_t g_pwm_backlight[PWM_TOTAL_MODULE_NUM] = { ATOMIC_INIT(-1) };
 static atomic_t g_pwm_en[PWM_TOTAL_MODULE_NUM] = { ATOMIC_INIT(-1) };
 static atomic_t g_pwm_max_backlight[PWM_TOTAL_MODULE_NUM] = {
-	ATOMIC_INIT(1023) };
+	ATOMIC_INIT(2047) };
 static atomic_t g_pwm_is_power_on[PWM_TOTAL_MODULE_NUM] = { ATOMIC_INIT(0) };
 static atomic_t g_pwm_value_before_power_off[PWM_TOTAL_MODULE_NUM] = {
 	ATOMIC_INIT(0) };
@@ -195,7 +195,7 @@ static void disp_pwm_backlight_status(enum disp_pwm_id_t id,
 	} else {
 		/* Set dummy backlight value */
 		if (is_power_on == true)
-			high_width = 1023;
+			high_width = 2047;
 		else
 			high_width = 0;
 	}
@@ -235,7 +235,7 @@ static void disp_pwm_query_backlight(char *debug_output)
 				high_width = 0;
 		} else {
 			/* Set dummy backlight value */
-			high_width = 1023;
+			high_width = 2047;
 		}
 	} else {
 		/* Read vlaue before clock off */
@@ -311,7 +311,7 @@ static int disp_pwm_config_init(enum DISP_MODULE_ENUM module,
 	(0x3ff << 16));
 
 	/* 1024 levels */
-	DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_1_OFF, 1023, 0x3ff);
+	DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_1_OFF, 2047, 0x7ff);
 	/* We don't init the backlight here until AAL/Android give */
 #endif
 	return 0;
@@ -429,9 +429,9 @@ static void disp_pwm_set_enabled(struct cmdqRecStruct *cmdq,
  *
  * Inputs:
  *  id		- DISP_PWM0 / DISP_PWM1
- *  level_1024	- Backlight value in [0, 1023]
+ *  level_1024	- Backlight value in [0, 2047]
  * Returns:
- *  PWM duty in [0, 1023]
+ *  PWM duty in [0, 2047]
  */
 static int disp_pwm_level_remap(enum disp_pwm_id_t id, int level_1024)
 {
@@ -527,7 +527,7 @@ int disp_pwm_get_max_backlight(enum disp_pwm_id_t id)
 
 	return atomic_read(&g_pwm_max_backlight[index]);
 #else
-	return 1023;
+	return 2047;
 #endif
 }
 
@@ -606,7 +606,7 @@ int disp_pwm_set_backlight_cmdq(enum disp_pwm_id_t id,
 
 		if (level_1024 > 0) {
 			DISP_REG_MASK(cmdq, reg_base + DISP_PWM_CON_1_OFF,
-				level_1024 << 16, 0x1fff << 16);
+				level_1024 << 16, 0x3fff << 16);
 
 			disp_pwm_set_enabled(cmdq, id, 1);
 		} else {
@@ -815,7 +815,7 @@ static void disp_pwm_test_grad(const char *cmd)
 	switch (cmd[0]) {
 	case 'H':
 		DISP_REG_SET(NULL, reg_grad, (1 << 16) | (1 << 8) | 1);
-		disp_pwm_set_backlight(DISP_PWM0, 1023);
+		disp_pwm_set_backlight(DISP_PWM0, 2047);
 		break;
 
 	case 'L':
