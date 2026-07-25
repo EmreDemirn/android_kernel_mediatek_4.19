@@ -52,17 +52,15 @@
 #include <linux/build_bug.h>
 #else
 // Stringify the expression if no message is given.
-#define static_assert(e, ...)  __static_assert(e, #__VA_ARGS__, #e)
-#define __static_assert(e, msg, ...) _Static_assert(e, msg)
-#endif
 
 #if KERNEL_VERSION(4, 16, 0) >= LINUX_VERSION_CODE
-typedef unsigned int __poll_t;
-#endif
 
 #ifndef ENOTSUP
 #define ENOTSUP EOPNOTSUPP
 #endif
+#endif /* 4.16 */
+
+#endif /* 4.19 */
 
 /* The module printing prefix */
 #define PR_ "mali_kbase_kinstr_jm: "
