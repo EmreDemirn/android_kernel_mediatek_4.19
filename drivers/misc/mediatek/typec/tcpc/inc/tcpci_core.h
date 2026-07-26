@@ -222,6 +222,8 @@ struct tcpc_ops {
 	int (*set_polarity)(struct tcpc_device *tcpc, int polarity);
 	int (*set_low_rp_duty)(struct tcpc_device *tcpc, bool low_rp);
 	int (*set_vconn)(struct tcpc_device *tcpc, int enable);
+	int (*set_role)(struct tcpc_device *tcpc, int status);
+	int (*get_mode)(struct tcpc_device *tcpc, int *typec_mode);
 	int (*deinit)(struct tcpc_device *tcpc);
 	int (*alert_vendor_defined_handler)(struct tcpc_device *tcpc);
 

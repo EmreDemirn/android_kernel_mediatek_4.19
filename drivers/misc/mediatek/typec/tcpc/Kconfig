@@ -52,6 +52,16 @@ config TCPC_MT6362
 	  The driver can also be build as a module.
 	  If so, the module will be called tcpci_mt6362
 
+config TCPC_WUSB3801
+	bool "MediaTek WUSB3801 TypeC port Controller Driver"
+	depends on TCPC_CLASS
+	default n
+	help
+	  Say Y to enable MediaTek WUSB3801
+	  TypeC port Controller
+	  Also Support Power Delivery
+	  Say N to disable
+
 config TCPC_MT6370
 	bool "MediaTek MT6370 TypeC port Controller Driver"
 	depends on TCPC_CLASS
