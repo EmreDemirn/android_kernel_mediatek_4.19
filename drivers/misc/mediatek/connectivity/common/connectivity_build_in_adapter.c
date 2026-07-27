@@ -69,6 +69,41 @@
 #define TASK_STATE_TO_CHAR_STR "RSDTtXZxKWPNn"
 #endif
 
+phys_addr_t gConEmiPhyBase;
+EXPORT_SYMBOL(gConEmiPhyBase);
+unsigned long long gConEmiSize;
+EXPORT_SYMBOL(gConEmiSize);
+
+phys_addr_t gGpsRsvMemPhyBase;
+EXPORT_SYMBOL(gGpsRsvMemPhyBase);
+unsigned long long gGpsRsvMemSize;
+EXPORT_SYMBOL(gGpsRsvMemSize);
+
+int reserve_memory_consys_fn(struct reserved_mem *rmem)
+{
+	pr_info(DFT_TAG "[W]%s: name: %s,base: 0x%llx,size: 0x%llx\n",
+		__func__, rmem->name, (unsigned long long)rmem->base,
+		(unsigned long long)rmem->size);
+	gConEmiPhyBase = rmem->base;
+	gConEmiSize = rmem->size;
+	return 0;
+}
+
+RESERVEDMEM_OF_DECLARE(reserve_memory_test, "mediatek,consys-reserve-memory",
+			reserve_memory_consys_fn);
+
+int reserve_memory_gps_fn(struct reserved_mem *rmem)
+{
+	pr_info(DFT_TAG "[W]%s: name: %s,base: 0x%llx,size: 0x%llx\n",
+		__func__, rmem->name, (unsigned long long)rmem->base,
+		(unsigned long long)rmem->size);
+	gGpsRsvMemPhyBase = rmem->base;
+	gGpsRsvMemSize = rmem->size;
+	return 0;
+}
+RESERVEDMEM_OF_DECLARE(reserve_memory_gps, "mediatek,gps-reserve-memory",
+			reserve_memory_gps_fn);
+
 void connectivity_export_show_stack(struct task_struct *tsk, unsigned long *sp)
 {
 #ifdef CFG_CONNADP_BUILD_IN

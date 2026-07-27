@@ -86,13 +86,6 @@ P_WMT_CONSYS_IC_OPS wmt_consys_ic_ops;
 
 struct platform_device *g_pdev;
 
-#ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
-phys_addr_t gConEmiPhyBase;
-EXPORT_SYMBOL(gConEmiPhyBase);
-unsigned long long gConEmiSize;
-EXPORT_SYMBOL(gConEmiSize);
-#endif
-
 UINT32 gps_lna_pin_num = 0xffffffff;
 
 INT32 chip_reset_status = -1;
@@ -271,6 +264,12 @@ static INT32 wmt_allocate_connsys_emi(struct platform_device *pdev)
 #ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
 	struct device_node *np;
 	struct reserved_mem *rmem;
+
+	if (gConEmiPhyBase) {
+		WMT_PLAT_PR_INFO("consys emi from early reserved mem: 0x%llx size 0x%llx\n",
+				 (unsigned long long)gConEmiPhyBase, gConEmiSize);
+		return 0;
+	}
 
 	np = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
 	if (!np) {
