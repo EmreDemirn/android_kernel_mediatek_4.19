@@ -32,8 +32,8 @@
 #include <linux/jiffies.h>
 #include <linux/kprobes.h>
 #include <asm/traps.h>
-#include <mt-plat/charger_class.h>
-#include <mt-plat/charger_type.h>
+#include <mt-plat/v1/charger_class.h>
+#include <mt-plat/v1/charger_type.h>
 #include <mt-plat/upmu_common.h>
 #include <mt-plat/mtk_boot.h>
 
@@ -407,7 +407,14 @@
 #define USBIN_COLLAPSE_TIME ((unsigned long)100)
 
 static int smb1351_set_hvdcp_dpdm(struct charger_device *chg_dev);
-extern int cycle_count;
+/* provided by the 4.14 Xiaomi mtk_battery; this tree keeps the 4.19
+ * battery core, so define weak fallbacks here.
+ */
+int __attribute__((weak)) cycle_count;
+bool __attribute__((weak)) is_meta_mode(void)
+{
+	return get_boot_mode() == META_BOOT;
+}
 static unsigned long f_vbusin_uv_time;
 static unsigned long s_vbusin_uv_time;
 extern bool thermal_is_500;

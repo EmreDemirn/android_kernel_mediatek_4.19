@@ -18,8 +18,8 @@
 #include <linux/time.h>
 
 #include <mt-plat/mtk_boot.h>
-#include <mt-plat/charger_type.h>
-#include <mt-plat/mtk_battery.h>
+#include <mt-plat/v1/charger_type.h>
+#include <mt-plat/v1/mtk_battery.h>
 #include <upmu_common.h>
 #include "mtk_charger_intf.h"
 #include "mtk_charger_init.h"

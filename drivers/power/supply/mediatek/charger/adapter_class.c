@@ -33,7 +33,7 @@ static ssize_t adapter_show_name(struct device *dev,
 		       adapter_dev->props.alias_name : "anonymous");
 }
 
-static int adapter_suspend(struct device *dev, pm_message_t state)
+static int __maybe_unused adapter_suspend(struct device *dev, pm_message_t state)
 {
 	struct adapter_device *adapter_dev = to_adapter_device(dev);
 
@@ -43,7 +43,7 @@ static int adapter_suspend(struct device *dev, pm_message_t state)
 	return 0;
 }
 
-static int adapter_resume(struct device *dev)
+static int __maybe_unused adapter_resume(struct device *dev)
 {
 	struct adapter_device *adapter_dev = to_adapter_device(dev);
 
@@ -264,8 +264,10 @@ static int __init adapter_class_init(void)
 		return PTR_ERR(adapter_class);
 	}
 	adapter_class->dev_groups = adapter_groups;
+	/* 4.19 struct class has no suspend/resume hooks
 	adapter_class->suspend = adapter_suspend;
 	adapter_class->resume = adapter_resume;
+	*/
 	return 0;
 }
 

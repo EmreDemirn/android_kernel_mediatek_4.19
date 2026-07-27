@@ -66,8 +66,8 @@
 #include <linux/of_address.h>
 #include <linux/reboot.h>
 
-#include <mt-plat/charger_type.h>
-#include <mt-plat/mtk_battery.h>
+#include <mt-plat/v1/charger_type.h>
+#include <mt-plat/v1/mtk_battery.h>
 #include <mt-plat/mtk_boot.h>
 #include <pmic.h>
 #include <mtk_gauge_time_service.h>
@@ -290,8 +290,8 @@ void _wake_up_charger(struct charger_manager *info)
 		return;
 
 	spin_lock_irqsave(&info->slock, flags);
-	if (!info->charger_wakelock.active)
-		__pm_stay_awake(&info->charger_wakelock);
+	if (!info->charger_wakelock->active)
+		__pm_stay_awake(info->charger_wakelock);
 	spin_unlock_irqrestore(&info->slock, flags);
 	info->charger_thread_timeout = true;
 	wake_up_interruptible(&info->wait_que);
@@ -2063,7 +2063,7 @@ static int charger_pm_event(struct notifier_block *notifier,
 			pinfo->endtime.tv_nsec != 0) {
 			chr_err("%s: alarm timeout, wake up charger\n",
 				__func__);
-			__pm_relax(&pinfo->charger_wakelock);
+			__pm_relax(pinfo->charger_wakelock);
 			pinfo->endtime.tv_sec = 0;
 			pinfo->endtime.tv_nsec = 0;
 			_wake_up_charger(pinfo);
@@ -2092,7 +2092,7 @@ static enum alarmtimer_restart
 		_wake_up_charger(info);
 	} else {
 		chr_err("%s: alarm timer timeout\n", __func__);
-		__pm_stay_awake(&info->charger_wakelock);
+		__pm_stay_awake(info->charger_wakelock);
 	}
 
 	return ALARMTIMER_NORESTART;
@@ -2163,8 +2163,8 @@ static int charger_routine_thread(void *arg)
 
 		mutex_lock(&info->charger_lock);
 		spin_lock_irqsave(&info->slock, flags);
-		if (!info->charger_wakelock.active)
-			__pm_stay_awake(&info->charger_wakelock);
+		if (!info->charger_wakelock->active)
+			__pm_stay_awake(info->charger_wakelock);
 		spin_unlock_irqrestore(&info->slock, flags);
 
 		info->charger_thread_timeout = false;
@@ -2206,7 +2206,7 @@ static int charger_routine_thread(void *arg)
 			chr_debug("disable charging\n");
 
 		spin_lock_irqsave(&info->slock, flags);
-		__pm_relax(&info->charger_wakelock);
+		__pm_relax(info->charger_wakelock);
 		spin_unlock_irqrestore(&info->slock, flags);
 		chr_debug("%s end , %d\n",
 			__func__, info->charger_thread_timeout);
@@ -4153,7 +4153,7 @@ static int mtk_charger_probe(struct platform_device *pdev)
 		info->enable_pp[i] = true;
 	}
 	atomic_set(&info->enable_kpoc_shdn, 1);
-	wakeup_source_init(&info->charger_wakelock, "charger suspend wakelock");
+	info->charger_wakelock = wakeup_source_register(NULL, "charger suspend wakelock");
 	spin_lock_init(&info->slock);
 
 	/* init thread */

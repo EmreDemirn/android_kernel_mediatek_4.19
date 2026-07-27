@@ -25,13 +25,13 @@
 #include <linux/alarmtimer.h>
 #include <linux/kthread.h>
 #include <linux/power_supply.h>
-#include <mt-plat/charger_type.h>
-#include <mt-plat/mtk_charger.h>
-#include <mt-plat/mtk_battery.h>
+#include <mt-plat/v1/charger_type.h>
+#include <mt-plat/v1/mtk_charger.h>
+#include <mt-plat/v1/mtk_battery.h>
 
 #include <mtk_gauge_time_service.h>
 
-#include <mt-plat/charger_class.h>
+#include <mt-plat/v1/charger_class.h>
 
 struct charger_manager;
 struct charger_data;
@@ -423,7 +423,7 @@ struct charger_manager {
 	struct timespec endtime;
 	bool is_suspend;
 
-	struct wakeup_source charger_wakelock;
+	struct wakeup_source *charger_wakelock;
 	struct mutex charger_lock;
 	struct mutex charger_pd_lock;
 	struct mutex cable_out_lock;

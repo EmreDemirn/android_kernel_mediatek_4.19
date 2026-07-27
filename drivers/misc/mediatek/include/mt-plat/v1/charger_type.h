@@ -23,6 +23,8 @@ enum charger_type {
 	|| defined(CONFIG_EXTCON_MTK_USB)
 extern void mt_usb_connect_v1(void);
 extern void mt_usb_disconnect_v1(void);
+extern void mt_usb_connect(void);
+extern void mt_usb_disconnect(void);
 #else
 #define mt_usb_connect() do { } while (0)
 #define mt_usb_disconnect() do { } while (0)

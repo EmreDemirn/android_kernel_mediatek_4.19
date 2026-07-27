@@ -24,8 +24,8 @@
 #include <linux/spinlock.h>
 //#include <mach/mtk_charger_init.h>
 
-#include <mt-plat/charger_type.h>
-#include <mt-plat/charger_class.h>
+#include <mt-plat/v1/charger_type.h>
+#include <mt-plat/v1/charger_class.h>
 
 /* charger_manager notify charger_consumer */
 enum {

@@ -46,8 +46,8 @@
 #include <mach/upmu_sw.h>
 #include <mach/upmu_hw.h>
 #include <mt-plat/mtk_boot.h>
-#include <mt-plat/charger_type.h>
-#include <mt-plat/mtk_charger.h>
+#include <mt-plat/v1/charger_type.h>
+#include <mt-plat/v1/mtk_charger.h>
 #include <pmic.h>
 #include <tcpm.h>
 #include "../../../../misc/mediatek/typec/tcpc/inc/tcpci_core.h"

@@ -3452,17 +3452,23 @@ void eem_init01(void)
 			timeout = 0;
 #if 1//angus todo
 			while (det->real_vboot != det->VBOOT) {
-				eem_debug
-			("@%s():%d, get_volt(%s) = 0x%08X, VBOOT = 0x%08X\n",
-			__func__, __LINE__, det->name,
-			det->real_vboot, det->VBOOT);
-
 				det->real_vboot = det->ops->volt_2_eem(det,
 					det->ops->get_volt(det));
-				if (timeout++ % 300 == 0)
-					eem_debug
-("@%s():%d, get_volt(%s) = 0x%08X, VBOOT = 0x%08X\n",
-__func__, __LINE__, det->name, det->real_vboot, det->VBOOT);
+				if (timeout++ % 100000 == 0)
+					eem_error
+("@%s():%d, get_volt(%s) = 0x%08X, VBOOT = 0x%08X, cnt=%u\n",
+__func__, __LINE__, det->name, det->real_vboot, det->VBOOT, timeout);
+				/* Do not spin forever waiting for VBOOT:
+				 * a stuck DVFS leaves PID1 here until the
+				 * HW watchdog fires. Bail out and continue
+				 * boot without PTP init for this bank.
+				 */
+				if (timeout >= 1000000) {
+					eem_error
+("@%s: VBOOT timeout on %s: volt 0x%08X != VBOOT 0x%08X, skip init01\n",
+__func__, det->name, det->real_vboot, det->VBOOT);
+					break;
+				}
 			}
 			/* BUG_ON(det->real_vboot != det->VBOOT); */
 			WARN_ON(det->real_vboot != det->VBOOT);
@@ -3522,6 +3528,14 @@ __func__, __LINE__, det->name, det->real_vboot, det->VBOOT);
 			eem_error
 			("init01 wait time is %d, bankmask:0x%x[/0x%x]\n",
 			timeout, out, final_init01_flag);
+
+		/* ~3s max: don't let PID1 spin until the HW watchdog */
+		if (timeout >= 30000) {
+			eem_error
+			("init01 TIMEOUT, bankmask:0x%x[/0x%x], continue boot\n",
+			out, final_init01_flag);
+			break;
+		}
 	}
 
 #if ENABLE_LOO_G

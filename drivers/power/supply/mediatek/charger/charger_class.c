@@ -19,7 +19,7 @@
 #include <linux/err.h>
 #include <linux/slab.h>
 
-#include <mt-plat/charger_class.h>
+#include <mt-plat/v1/charger_class.h>
 
 static struct class *charger_class;
 
@@ -33,7 +33,7 @@ static ssize_t charger_show_name(struct device *dev,
 		       chg_dev->props.alias_name : "anonymous");
 }
 
-static int charger_suspend(struct device *dev, pm_message_t state)
+static int __maybe_unused charger_suspend(struct device *dev, pm_message_t state)
 {
 	struct charger_device *chg_dev = to_charger_device(dev);
 
@@ -43,7 +43,7 @@ static int charger_suspend(struct device *dev, pm_message_t state)
 	return 0;
 }
 
-static int charger_resume(struct device *dev)
+static int __maybe_unused charger_resume(struct device *dev)
 {
 	struct charger_device *chg_dev = to_charger_device(dev);
 
@@ -1033,8 +1033,10 @@ static int __init charger_class_init(void)
 		return PTR_ERR(charger_class);
 	}
 	charger_class->dev_groups = charger_groups;
+	/* 4.19 struct class has no suspend/resume hooks
 	charger_class->suspend = charger_suspend;
 	charger_class->resume = charger_resume;
+	*/
 	return 0;
 }
 
