@@ -381,15 +381,39 @@
 
 /* Xiaomi MT6768 merlin sensors */
 #define OV13B10_SUNNY_SENSOR_ID                 0x560D43
+#define OV13B10_OFILM_SENSOR_ID                 0x560D44
+#define OV13B10_QTECH_SENSOR_ID                 0x560D45
+#define OV13B10_SENSOR_INDIA_ID                 0x560D46
+#define OV13B10_SUNNY_SENSOR_INDIA_ID           0x560D47
 #define OV2180_SENSOR_ID                        0x2682
 #define OV2180_SUNNY_SENSOR_ID                  0x2681
+#define OV2180_SENSOR_INDIA_ID                  0x2685
+#define OV2180_SUNNY_SENSOR_INDIA_ID            0x2686
 #define OV2680_SUNNY_SENSOR_ID                  0x2680
+#define OV2680_SUNNY_SENSOR_INDIA_ID            0x2679
 #define S5KGM1SP_SENSOR_ID                      0x08d1
 #define S5KGM1SP_SUNNY_SENSOR_ID                0x08d2
+#define S5KGM1SP_SENSOR_INDIA_ID                0x08d3
+#define S5KGM1SP_SUNNY_SENSOR_INDIA_ID          0x08d4
 #define S5K4H7YX_SENSOR_ID                      0x487B
 #define S5K4H7YX_SUNNY_SENSOR_ID                0x487C
+#define S5K4H7YX_OFILM_FRONT_SENSOR_ID          0x487D
+#define S5K4H7YX_OFILM_ULTRA_SENSOR_ID          0x487E
+#define S5K4H7YX_SENSOR_INDIA_ID                0x4882
+#define S5K4H7YX_SUNNY_SENSOR_INDIA_ID          0x4883
+#define GC02M1_SENSOR_ID                        0x02E0
+#define GC02M1_SUNNY_SENSOR_ID                  0x02E1
 #define GC02M1_MACRO_SENSOR_ID                  0x02E2
 #define GC02M1_MACRO_SUNNY_SENSOR_ID            0x02E3
+#define GC02M1_SENSOR_INDIA_ID                  0x02e4
+#define GC02M1_SUNNY_SENSOR_INDIA_ID            0x02e5
+#define GC02M1_MACRO_SENSOR_INDIA_ID            0x02e6
+#define GC02M1_MACRO_SUNNY_SENSOR_INDIA_ID      0x02e7
+#define GC5035_OFILM_SENSOR_ID                  0x5035
+#define GC5035_QTECH_SENSOR_ID                  0x5036
+#define OV8856_QTECH_FRONT_SENSOR_ID            0x885C
+#define OV8856_QTECH_ULTRA_SENSOR_ID            0x885B
+#define S5K3L6_QTECH_SENSOR_ID                  0x30C6
 
 /* CAMERA DRIVER NAME */
 #define CAMERA_HW_DEVNAME                       "kd_camera_hw"

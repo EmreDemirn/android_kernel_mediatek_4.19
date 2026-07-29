@@ -134,8 +134,8 @@ static const struct snd_kcontrol_new mt6768_mt6358_controls[] = {
 static int cs35l41_dailink_init(struct snd_soc_pcm_runtime *rtd)
 {
 	struct snd_soc_card *card = rtd->card;
-	struct snd_soc_codec *spk_cdc = rtd->codec_dais[0]->codec;
-	struct snd_soc_dapm_context *cs35l41_dapm = snd_soc_codec_get_dapm(spk_cdc);
+	struct snd_soc_component *spk_cdc = rtd->codec_dais[0]->component;
+	struct snd_soc_dapm_context *cs35l41_dapm = snd_soc_component_get_dapm(spk_cdc);
 	//dev_info(card->dev, "%s: found codec[%s]\n", __func__, dev_name(spk_cdc->dev));
 	snd_soc_dapm_ignore_suspend(cs35l41_dapm, "AMP Playback");
 	snd_soc_dapm_ignore_suspend(cs35l41_dapm, "AMP Capture");

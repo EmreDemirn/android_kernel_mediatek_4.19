@@ -9,5 +9,6 @@
 
 #define _LENS_LIST_H
 
+extern void AFRegulatorCtrl(int Stage);
 
 #endif

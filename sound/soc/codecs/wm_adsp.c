@@ -890,13 +890,13 @@ static const struct {
 };
 
 static void wm_adsp2_init_debugfs(struct wm_adsp *dsp,
-				  struct snd_soc_codec *codec)
+				  struct snd_soc_component *codec)
 {
 	struct dentry *root = NULL;
 	char *root_name;
 	int i;
 
-	if (!codec->component.debugfs_root) {
+	if (!codec->debugfs_root) {
 		adsp_err(dsp, "No codec debugfs root\n");
 		goto err;
 	}
@@ -906,7 +906,7 @@ static void wm_adsp2_init_debugfs(struct wm_adsp *dsp,
 		goto err;
 
 	snprintf(root_name, PAGE_SIZE, "dsp%d", dsp->num);
-	root = debugfs_create_dir(root_name, codec->component.debugfs_root);
+	root = debugfs_create_dir(root_name, codec->debugfs_root);
 	kfree(root_name);
 
 	if (!root)
@@ -947,7 +947,7 @@ static void wm_adsp2_cleanup_debugfs(struct wm_adsp *dsp)
 }
 #else
 static inline void wm_adsp2_init_debugfs(struct wm_adsp *dsp,
-					 struct snd_soc_codec *codec)
+					 struct snd_soc_component *codec)
 {
 }
 
@@ -973,9 +973,9 @@ static inline void wm_adsp_debugfs_clear(struct wm_adsp *dsp)
 static int wm_adsp_fw_get(struct snd_kcontrol *kcontrol,
 			  struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
 	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	ucontrol->value.enumerated.item[0] = dsp[e->shift_l].fw;
 
@@ -985,9 +985,9 @@ static int wm_adsp_fw_get(struct snd_kcontrol *kcontrol,
 static int wm_adsp_fw_put(struct snd_kcontrol *kcontrol,
 			  struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
 	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 	int ret = 0;
 
 	if (ucontrol->value.enumerated.item[0] == dsp[e->shift_l].fw)
@@ -1015,8 +1015,8 @@ static int wm_adsp_fw_put(struct snd_kcontrol *kcontrol,
 static int wm_adsp_cal_z_get(struct snd_kcontrol *kcontrol,
 			     struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	ucontrol->value.enumerated.item[0] = dsp->cal_z;
 
@@ -1026,8 +1026,8 @@ static int wm_adsp_cal_z_get(struct snd_kcontrol *kcontrol,
 static int wm_adsp_cal_z_put(struct snd_kcontrol *kcontrol,
 			     struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	dsp->cal_z = ucontrol->value.enumerated.item[0];
 	dsp->cal_chksum = dsp->cal_z + CAL_STATUS_DEFAULT;
@@ -1040,8 +1040,8 @@ static int wm_adsp_cal_z_put(struct snd_kcontrol *kcontrol,
 static int wm_adsp_ambient_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	ucontrol->value.enumerated.item[0] = dsp->ambient;
 
@@ -1051,8 +1051,8 @@ static int wm_adsp_ambient_get(struct snd_kcontrol *kcontrol,
 static int wm_adsp_ambient_put(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	dsp->ambient = ucontrol->value.enumerated.item[0];
 
@@ -1064,8 +1064,8 @@ static int wm_adsp_ambient_put(struct snd_kcontrol *kcontrol,
 static int wm_adsp_cal_status_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	ucontrol->value.enumerated.item[0] = dsp->cal_status;
 
@@ -1075,8 +1075,8 @@ static int wm_adsp_cal_status_get(struct snd_kcontrol *kcontrol,
 static int wm_adsp_cal_status_put(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	dsp->cal_status = ucontrol->value.enumerated.item[0];
 
@@ -1088,8 +1088,8 @@ static int wm_adsp_cal_status_put(struct snd_kcontrol *kcontrol,
 static int wm_adsp_cal_chksum_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	ucontrol->value.enumerated.item[0] = dsp->cal_chksum;
 
@@ -1099,8 +1099,8 @@ static int wm_adsp_cal_chksum_get(struct snd_kcontrol *kcontrol,
 static int wm_adsp_cal_chksum_put(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	dsp->cal_chksum = ucontrol->value.enumerated.item[0];
 
@@ -1111,8 +1111,8 @@ static int wm_adsp_cal_chksum_put(struct snd_kcontrol *kcontrol,
 static int wm_adsp_block_bypass_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	ucontrol->value.enumerated.item[0] = dsp->block_bypass;
 
@@ -1122,8 +1122,8 @@ static int wm_adsp_block_bypass_get(struct snd_kcontrol *kcontrol,
 static int wm_adsp_block_bypass_put(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsp = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsp = snd_soc_component_get_drvdata(codec);
 
 	dsp->block_bypass = ucontrol->value.enumerated.item[0];
 
@@ -1735,7 +1735,7 @@ static int wmfw_add_ctl(struct wm_adsp *dsp, struct wm_coeff_ctl *ctl)
 		break;
 	}
 
-	ret = snd_soc_add_codec_controls(dsp->codec, kcontrol, 1);
+	ret = snd_soc_add_component_controls(dsp->codec, kcontrol, 1);
 	if (ret < 0)
 		goto err_kcontrol;
 
@@ -3443,8 +3443,8 @@ int wm_adsp1_event(struct snd_soc_dapm_widget *w,
 		   struct snd_kcontrol *kcontrol,
 		   int event)
 {
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
-	struct wm_adsp *dsps = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_dapm_to_component(w->dapm);
+	struct wm_adsp *dsps = snd_soc_component_get_drvdata(codec);
 	struct wm_adsp *dsp = &dsps[w->shift];
 	struct wm_coeff_ctl *ctl;
 	int ret;
@@ -3960,8 +3960,8 @@ static void wm_adsp2_set_dspclk(struct wm_adsp *dsp, unsigned int freq)
 int wm_adsp2_preloader_get(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsps = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsps = snd_soc_component_get_drvdata(codec);
 	struct soc_mixer_control *mc =
 		(struct soc_mixer_control *)kcontrol->private_value;
 	struct wm_adsp *dsp = &dsps[mc->shift - 1];
@@ -3975,9 +3975,9 @@ EXPORT_SYMBOL_GPL(wm_adsp2_preloader_get);
 int wm_adsp2_preloader_put(struct snd_kcontrol *kcontrol,
 			   struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct wm_adsp *dsps = snd_soc_codec_get_drvdata(codec);
-	struct snd_soc_dapm_context *dapm = snd_soc_codec_get_dapm(codec);
+	struct snd_soc_component *codec = snd_soc_kcontrol_component(kcontrol);
+	struct wm_adsp *dsps = snd_soc_component_get_drvdata(codec);
+	struct snd_soc_dapm_context *dapm = snd_soc_component_get_dapm(codec);
 	struct soc_mixer_control *mc =
 		(struct soc_mixer_control *)kcontrol->private_value;
 	struct wm_adsp *dsp = &dsps[mc->shift - 1];
@@ -3989,9 +3989,9 @@ int wm_adsp2_preloader_put(struct snd_kcontrol *kcontrol,
 	dsp->preloaded = ucontrol->value.integer.value[0];
 
 	if (ucontrol->value.integer.value[0])
-		snd_soc_component_force_enable_pin(&codec->component, preload);
+		snd_soc_component_force_enable_pin(codec, preload);
 	else
-		snd_soc_component_disable_pin(&codec->component, preload);
+		snd_soc_component_disable_pin(codec, preload);
 
 	snd_soc_dapm_sync(dapm);
 
@@ -4017,8 +4017,8 @@ int wm_adsp2_early_event(struct snd_soc_dapm_widget *w,
 			 struct snd_kcontrol *kcontrol, int event,
 			 unsigned int freq)
 {
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
-	struct wm_adsp *dsps = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_dapm_to_component(w->dapm);
+	struct wm_adsp *dsps = snd_soc_component_get_drvdata(codec);
 	struct wm_adsp *dsp = &dsps[w->shift];
 	struct wm_coeff_ctl *ctl;
 
@@ -4060,8 +4060,8 @@ EXPORT_SYMBOL_GPL(wm_adsp2_early_event);
 int wm_halo_early_event(struct snd_soc_dapm_widget *w,
 			struct snd_kcontrol *kcontrol, int event)
 {
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
-	struct wm_adsp *dsps = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_dapm_to_component(w->dapm);
+	struct wm_adsp *dsps = snd_soc_component_get_drvdata(codec);
 	struct wm_adsp *dsp = &dsps[w->shift];
 	struct wm_coeff_ctl *ctl;
 
@@ -4105,8 +4105,8 @@ EXPORT_SYMBOL_GPL(wm_adsp_queue_boot_work);
 int wm_adsp2_event(struct snd_soc_dapm_widget *w,
 		   struct snd_kcontrol *kcontrol, int event)
 {
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
-	struct wm_adsp *dsps = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_dapm_to_component(w->dapm);
+	struct wm_adsp *dsps = snd_soc_component_get_drvdata(codec);
 	struct wm_adsp *dsp = &dsps[w->shift];
 	int ret;
 
@@ -4223,8 +4223,8 @@ EXPORT_SYMBOL_GPL(wm_adsp2_event);
 int wm_halo_event(struct snd_soc_dapm_widget *w, struct snd_kcontrol *kcontrol,
 		  int event)
 {
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
-	struct wm_adsp *dsps = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *codec = snd_soc_dapm_to_component(w->dapm);
+	struct wm_adsp *dsps = snd_soc_component_get_drvdata(codec);
 	struct wm_adsp *dsp = &dsps[w->shift];
 	int ret;
 
@@ -4381,7 +4381,7 @@ static int wm_adsp_k_ctl_put(struct wm_adsp *dsp, const char *name, int value)
 {
 	struct snd_kcontrol *kctl = NULL;
 	struct snd_ctl_elem_value ucontrol;
-	struct snd_soc_card *card = dsp->codec->component.card;
+	struct snd_soc_card *card = dsp->codec->card;
 
 	kctl = snd_soc_card_get_kcontrol(card, name);
 	if (kctl == NULL) {
@@ -4401,7 +4401,7 @@ static int wm_adsp_k_ctl_get(struct wm_adsp *dsp, const char *name)
 {
 	struct snd_kcontrol *kctl = NULL;
 	struct snd_ctl_elem_value ucontrol;
-	struct snd_soc_card *card = dsp->codec->component.card;
+	struct snd_soc_card *card = dsp->codec->card;
 
 	int value = 0;
 
@@ -4469,7 +4469,7 @@ static int wm_halo_apply_calibration(struct snd_soc_dapm_widget *w)
 }
 
 
-int wm_adsp2_codec_probe(struct wm_adsp *dsp, struct snd_soc_codec *codec)
+int wm_adsp2_codec_probe(struct wm_adsp *dsp, struct snd_soc_component *codec)
 {
 	char preload[32];
 
@@ -4479,20 +4479,20 @@ int wm_adsp2_codec_probe(struct wm_adsp *dsp, struct snd_soc_codec *codec)
 	snprintf(preload, ARRAY_SIZE(preload), "DSP%d%s Preload", dsp->num,
 		 dsp->suffix);
 
-	snd_soc_component_disable_pin(&codec->component, preload);
+	snd_soc_component_disable_pin(codec, preload);
 
 	wm_adsp2_init_debugfs(dsp, codec);
 
 	dsp->codec = codec;
-	snd_soc_add_codec_controls(codec,
+	snd_soc_add_component_controls(codec,
 					  wm_adsp_cal_controls,
 					  ARRAY_SIZE(wm_adsp_cal_controls));
 
-	return snd_soc_add_codec_controls(codec, &dsp->fw_ctrl, 1);
+	return snd_soc_add_component_controls(codec, &dsp->fw_ctrl, 1);
 }
 EXPORT_SYMBOL_GPL(wm_adsp2_codec_probe);
 
-int wm_adsp2_codec_remove(struct wm_adsp *dsp, struct snd_soc_codec *codec)
+int wm_adsp2_codec_remove(struct wm_adsp *dsp, struct snd_soc_component *codec)
 {
 	wm_adsp2_cleanup_debugfs(dsp);
 

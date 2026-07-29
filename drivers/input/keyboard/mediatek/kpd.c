@@ -48,7 +48,7 @@ static u16 kpd_keymap_state[KPD_NUM_MEMS];
 
 struct input_dev *kpd_input_dev;
 #ifdef CONFIG_PM_SLEEP
-struct wakeup_source kpd_suspend_lock;
+struct wakeup_source *kpd_suspend_lock;
 #endif
 struct keypad_dts_data kpd_dts_data;
 
@@ -130,7 +130,7 @@ static ssize_t kpd_long_press_is_reboot_show(struct device_driver *ddri, char *b
 	return res;
 }
 
-static DRIVER_ATTR(kpd_long_press_is_reboot, 0664, kpd_long_press_is_reboot_show, kpd_long_press_is_reboot_store);
+static DRIVER_ATTR_RW(kpd_long_press_is_reboot);
 
 static struct driver_attribute *kpd_attr_list[] = {
 	&driver_attr_kpd_call_state,
@@ -212,7 +212,7 @@ static void kpd_keymap_handler(unsigned long data)
 
 	kpd_get_keymap_state(new_state);
 #ifdef CONFIG_PM_SLEEP
-	__pm_wakeup_event(&kpd_suspend_lock, 500);
+	__pm_wakeup_event(kpd_suspend_lock, 500);
 #endif
 	for (i = 0; i < KPD_NUM_MEMS; i++) {
 		change = new_state[i] ^ kpd_keymap_state[i];
@@ -452,7 +452,7 @@ static int kpd_pdrv_probe(struct platform_device *pdev)
 		return err;
 	}
 #ifdef CONFIG_PM_SLEEP
-	wakeup_source_init(&kpd_suspend_lock, "kpd wakelock");
+	kpd_suspend_lock = wakeup_source_register(NULL, "kpd wakelock");
 #endif
 	/* register IRQ and EINT */
 	kpd_set_debounce(kpd_dts_data.kpd_key_debounce);
