@@ -180,7 +180,7 @@ static int cpufreq_thermal_notifier(struct notifier_block *nb,
 			clipped_freq = cpufreq_cdev->clipped_freq;
 
 	}
-	cpufreq_verify_within_limits(policy, 0, clipped_freq);
+	{ struct cpufreq_policy_data _pd = { .min = policy->cpuinfo.min_freq, .max = policy->cpuinfo.max_freq, .cpu = policy->cpu }; cpufreq_verify_within_limits(&_pd, 0, clipped_freq); policy->min = _pd.min; policy->max = _pd.max; }
 	mutex_unlock(&cooling_list_lock);
 
 	return NOTIFY_OK;
@@ -561,8 +561,7 @@ static int cpufreq_get_requested_power(struct thermal_cooling_device *cdev,
 
 	if (load_cpu) {
 		trace_thermal_power_cpu_get_power(policy->related_cpus, freq,
-						  load_cpu, i, dynamic_power,
-						  static_power);
+						  load_cpu, i, dynamic_power);
 
 		kfree(load_cpu);
 	}

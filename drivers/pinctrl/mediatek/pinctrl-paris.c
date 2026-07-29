@@ -550,23 +550,8 @@ static int mtk_pctrl_get_group_pins(struct pinctrl_dev *pctldev,
 	return 0;
 }
 
-static int mtk_hw_get_value_wrap(struct mtk_pinctrl *hw, unsigned int gpio,
-				int field)
-{
-	const struct mtk_pin_desc *desc;
-	int value, err;
-
-	if (gpio > hw->soc->npins)
-		return -EINVAL;
-
-	desc = (const struct mtk_pin_desc *)&hw->soc->pins[gpio];
-
-	err = mtk_hw_get_value(hw, desc, field, &value);
-	if (err)
-		return err;
-
-	return value;
-}
+/* mtk_hw_get_value_wrap moved to pinctrl-mtk-common-v2.h as inline
+ * (needed by pinctrl-mtk-common-v2_debug.c too) */
 
 #define mtk_pctrl_get_pinmux(hw, gpio)			\
 	mtk_hw_get_value_wrap(hw, gpio, PINCTRL_PIN_REG_MODE)

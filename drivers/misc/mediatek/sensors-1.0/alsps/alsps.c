@@ -304,17 +304,17 @@ ps_loop:
 	}
 }
 
-static void als_poll(unsigned long data)
+static void als_poll(struct timer_list *timer)
 {
-	struct alsps_context *obj = (struct alsps_context *)data;
+	struct alsps_context *obj = from_timer(obj, timer, timer_als);
 
 	if ((obj != NULL) && (obj->is_als_polling_run))
 		schedule_work(&obj->report_als);
 }
 
-static void ps_poll(unsigned long data)
+static void ps_poll(struct timer_list *timer)
 {
-	struct alsps_context *obj = (struct alsps_context *)data;
+	struct alsps_context *obj = from_timer(obj, timer, timer_ps);
 
 	if (obj != NULL)
 		schedule_work(&obj->report_ps);
@@ -336,17 +336,13 @@ static struct alsps_context *alsps_context_alloc_object(void)
 	atomic_set(&obj->wake, 0);
 	INIT_WORK(&obj->report_als, als_work_func);
 	INIT_WORK(&obj->report_ps, ps_work_func);
-	init_timer(&obj->timer_als);
-	init_timer(&obj->timer_ps);
+	timer_setup(&obj->timer_als, als_poll, 0);
+	timer_setup(&obj->timer_ps, ps_poll, 0);
 	obj->timer_als.expires =
 		jiffies + atomic_read(&obj->delay_als) / (1000 / HZ);
-	obj->timer_als.function = als_poll;
-	obj->timer_als.data = (unsigned long)obj;
 
 	obj->timer_ps.expires =
 		jiffies + atomic_read(&obj->delay_ps) / (1000 / HZ);
-	obj->timer_ps.function = ps_poll;
-	obj->timer_ps.data = (unsigned long)obj;
 
 	obj->is_als_first_data_after_enable = false;
 	obj->is_als_polling_run = false;

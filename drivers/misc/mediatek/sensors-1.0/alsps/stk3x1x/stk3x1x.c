@@ -271,7 +271,7 @@ static int32_t stk3x1x_get_ir_value(struct stk3x1x_priv *obj,
 static int stk3x1x_validate_n_handle(struct i2c_client *client);
 #endif
 static int stk3x1x_init_client(struct i2c_client *client);
-static struct wakeup_source mps_lock;
+static struct wakeup_source *mps_lock;
 
 static DEFINE_MUTEX(run_cali_mutex);
 /*----------------------------------------------------------------------------*/
@@ -1198,10 +1198,10 @@ static int stk3x1x_enable_ps(struct i2c_client *client,
 		stk3x1x_enable_ps_set_thd(obj);
 
 		if (obj->hw->polling_mode_ps == 1)
-			__pm_stay_awake(&mps_lock);
+			__pm_stay_awake(mps_lock);
 	} else {
 		if (obj->hw->polling_mode_ps == 1)
-			__pm_relax(&mps_lock);
+			__pm_relax(mps_lock);
 	}
 
 	if (trc & STK_TRC_DEBUG)
@@ -3402,7 +3402,7 @@ static int stk3x1x_i2c_probe(struct i2c_client *client,
 	if (obj->hw->polling_mode_ps == 1) {
 		ps_ctl.is_polling_mode = true;
 		ps_ctl.is_report_input_direct = false;
-		wakeup_source_init(&mps_lock, "ps wakelock");
+		mps_lock = wakeup_source_register(NULL, "ps wakelock");
 	} else {
 		ps_ctl.is_polling_mode = false;
 		ps_ctl.is_report_input_direct = true;

@@ -16,6 +16,7 @@
 #include <asm/atomic.h>
 #include <linux/timer.h>
 #include "cpu_ctrl.h"
+#include <topo_ctrl.h>
 
 #include "teei_fp.h"
 #include "tee_client_api.h"
@@ -110,12 +111,12 @@ struct TEEC_UUID uuid_ta_gf = { 0x8888c03f, 0xc30c, 0x4dd0,
 static LIST_HEAD(device_list);
 static DEFINE_MUTEX(device_list_lock);
 
-static struct wakeup_source fp_wakesrc;
+static struct wakeup_source *fp_wakesrc;
 
 /* begin modify for unlock speed */
 static int cluster_num;
-static struct pm_qos_request gf_fingerprint_ddr_req;
-static struct ppm_limit_data *freq_to_set;
+static struct mtk_pm_qos_request gf_fingerprint_ddr_req;
+static struct cpu_ctrl_data *freq_to_set;
 static atomic_t boosted = ATOMIC_INIT(0);
 static struct timer_list release_timer;
 static struct work_struct fp_display_work;
@@ -734,7 +735,7 @@ static irqreturn_t gf_irq(int irq, void *handle)
 	struct gf_device *gf_dev = (struct gf_device *)handle;
 	FUNC_ENTRY();
 
-	__pm_wakeup_event(&fp_wakesrc, WAKELOCK_HOLD_TIME);
+	__pm_wakeup_event(fp_wakesrc, WAKELOCK_HOLD_TIME);
 	gf_netlink_send(gf_dev, GF_NETLINK_IRQ);
 	gf_dev->sig_count++;
 
@@ -1146,14 +1147,14 @@ static ssize_t gf_debug_show(struct device *dev,
 static int gf_fingerprint_vcorefs_hold(void)
 {
 	printk("gf_fingerprint_vcorefs_hold\n");
-	pm_qos_update_request(&gf_fingerprint_ddr_req, DDR_OPP_0);
+	mtk_pm_qos_update_request(&gf_fingerprint_ddr_req, DDR_OPP_0);
 	return 0;
 }
 
 static int gf_fingerprint_vcorefs_release(void)
 {
 	printk("gf_fingerprint_vcorefs_release\n");
-	pm_qos_update_request(&gf_fingerprint_ddr_req, DDR_OPP_UNREQ);
+	mtk_pm_qos_update_request(&gf_fingerprint_ddr_req, DDR_OPP_UNREQ);
 	return 0;
 }
 
@@ -1184,7 +1185,7 @@ static void freq_release(struct work_struct *work)
 	}
 }
 
-static void freq_release_timer(unsigned long arg)
+static void freq_release_timer(struct timer_list *timer)
 {
 	gf_debug(INFO_LOG, "entry %s line %d \n", __func__, __LINE__);
 	schedule_work(&fp_freq_work);
@@ -1997,12 +1998,12 @@ static int gf_probe(struct spi_device *spi)
 	}
 
 	/* begin modify for unlock speed */
-	pm_qos_add_request(&gf_fingerprint_ddr_req, PM_QOS_DDR_OPP, PM_QOS_DDR_OPP_DEFAULT_VALUE);
-	cluster_num = arch_get_nr_clusters();
+	mtk_pm_qos_add_request(&gf_fingerprint_ddr_req, MTK_PM_QOS_DDR_OPP, MTK_PM_QOS_DDR_OPP_DEFAULT_VALUE);
+	cluster_num = topo_ctrl_get_nr_clusters();
 	gf_debug(INFO_LOG, "cluster_num = %d \n", cluster_num);
 
 	freq_to_set =
-		kcalloc(cluster_num, sizeof(struct ppm_limit_data), GFP_KERNEL);
+		kcalloc(cluster_num, sizeof(struct cpu_ctrl_data), GFP_KERNEL);
 
 	if (!freq_to_set) {
 		gf_debug(INFO_LOG, "kcalloc freq_to_set fail\n");
@@ -2018,9 +2019,7 @@ static int gf_probe(struct spi_device *spi)
 	INIT_WORK(&fp_freq_work, freq_release);
 	INIT_WORK(&fp_display_work, unblank_work);
 
-	init_timer(&release_timer);
-	release_timer.function = freq_release_timer;
-	release_timer.data = 0UL;
+	timer_setup(&release_timer, freq_release_timer, 0);
 	/* end modify for unlock speed */
 
 	INIT_LIST_HEAD(&gf_dev->device_entry);
@@ -2268,7 +2267,7 @@ static int gf_probe(struct spi_device *spi)
 	}
 
 
-	wakeup_source_init(&fp_wakesrc, "fp_wakesrc");
+	fp_wakesrc = wakeup_source_register(NULL, "fp_wakesrc");
 
 	gf_dev->probe_finish = 1;
 	gf_dev->is_sleep_mode = 0;
@@ -2344,7 +2343,7 @@ static int gf_remove(struct spi_device *spi)
 	FUNC_ENTRY();
 
 
-	wakeup_source_trash(&fp_wakesrc);
+	wakeup_source_unregister(fp_wakesrc);
 	/* make sure ops on existing fds can abort cleanly */
 	if (gf_dev->irq) {
 		free_irq(gf_dev->irq, gf_dev);

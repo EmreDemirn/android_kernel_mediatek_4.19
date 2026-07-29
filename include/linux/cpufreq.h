@@ -449,6 +449,7 @@ static inline void cpufreq_resume(void) {}
 
 #define CPUFREQ_TRANSITION_NOTIFIER	(0)
 #define CPUFREQ_POLICY_NOTIFIER		(1)
+#define CPUFREQ_THERMAL			(2)
 
 /* Transition notifiers */
 #define CPUFREQ_PRECHANGE		(0)

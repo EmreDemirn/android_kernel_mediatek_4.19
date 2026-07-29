@@ -84,7 +84,7 @@ static unsigned int bl_div_hal = CLK_DIV1;
 /* for button led don't do ISINK disable first time */
 static int button_flag_isink0;
 static int button_flag_isink1;
-struct wakeup_source leds_suspend_lock;
+struct wakeup_source *leds_suspend_lock;
 struct cust_mt65xx_led *pled_dtsi;
 
 char *leds_name[TYPE_TOTAL] = {
@@ -156,7 +156,7 @@ static void backlight_debug_log(int level, int mappingLevel)
 
 void mt_leds_wake_lock_init(void)
 {
-	wakeup_source_init(&leds_suspend_lock, "leds wakelock");
+	leds_suspend_lock = wakeup_source_register(NULL, "leds wakelock");
 }
 
 struct cust_mt65xx_led *get_cust_led_dtsi(void)
@@ -967,7 +967,7 @@ int mt_mt65xx_blink_set(struct led_classdev *led_cdev,
 			mt_led_blink_pmic(led_data->cust.data,
 					  &nled_tmp_setting);
 		} else if (!got_wake_lock) {
-			__pm_stay_awake(&leds_suspend_lock);
+			__pm_stay_awake(leds_suspend_lock);
 			got_wake_lock = 1;
 		}
 	} else if (!led_data->delay_on && led_data->delay_off) {
@@ -979,7 +979,7 @@ int mt_mt65xx_blink_set(struct led_classdev *led_cdev,
 		} else if (led_data->cust.mode == MT65XX_LED_MODE_PMIC)
 			mt_brightness_set_pmic(led_data->cust.data, 0, 0);
 		else if (got_wake_lock) {
-			__pm_relax(&leds_suspend_lock);
+			__pm_relax(leds_suspend_lock);
 			got_wake_lock = 0;
 		}
 	} else if (led_data->delay_on && !led_data->delay_off) {
@@ -990,7 +990,7 @@ int mt_mt65xx_blink_set(struct led_classdev *led_cdev,
 		} else if (led_data->cust.mode == MT65XX_LED_MODE_PMIC)
 			mt_brightness_set_pmic(led_data->cust.data, 1, 0);
 		else if (got_wake_lock) {
-			__pm_relax(&leds_suspend_lock);
+			__pm_relax(leds_suspend_lock);
 			got_wake_lock = 0;
 		}
 	} else

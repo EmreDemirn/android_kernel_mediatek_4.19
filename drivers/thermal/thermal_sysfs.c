@@ -775,10 +775,13 @@ void thermal_cooling_device_setup_sysfs(struct thermal_cooling_device *cdev)
 	cdev->device.groups = cooling_device_attr_groups;
 }
 
+void thermal_cooling_device_destroy_sysfs(struct thermal_cooling_device *cdev)
+{
+}
+
 /* these helper will be used only at the time of bindig */
 ssize_t
-thermal_cooling_device_trip_point_show(struct device *dev,
-				       struct device_attribute *attr, char *buf)
+trip_point_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct thermal_instance *instance;
 
@@ -791,9 +794,28 @@ thermal_cooling_device_trip_point_show(struct device *dev,
 		return sprintf(buf, "%d\n", instance->trip);
 }
 
+ssize_t trip_point_store(struct device *dev, struct device_attribute *attr,
+			 const char *buf, size_t count)
+{
+	struct thermal_instance *instance;
+	int ret, trip;
+
+	ret = kstrtoint(buf, 0, &trip);
+	if (ret)
+		return ret;
+
+	instance = container_of(attr, struct thermal_instance, attr);
+
+	if (trip >= instance->tz->trips || trip < THERMAL_TRIPS_NONE)
+		return -EINVAL;
+
+	instance->trip = trip;
+
+	return count;
+}
+
 ssize_t
-thermal_cooling_device_weight_show(struct device *dev,
-				   struct device_attribute *attr, char *buf)
+weight_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct thermal_instance *instance;
 
@@ -802,10 +824,8 @@ thermal_cooling_device_weight_show(struct device *dev,
 	return sprintf(buf, "%d\n", instance->weight);
 }
 
-ssize_t
-thermal_cooling_device_weight_store(struct device *dev,
-				    struct device_attribute *attr,
-				    const char *buf, size_t count)
+ssize_t weight_store(struct device *dev, struct device_attribute *attr,
+		     const char *buf, size_t count)
 {
 	struct thermal_instance *instance;
 	int ret, weight;

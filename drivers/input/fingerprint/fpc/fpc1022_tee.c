@@ -74,6 +74,7 @@
 /* begin modify for unlock speed */
 #include "../../../misc/mediatek/base/power/include/mtk_ppm_api.h"
 #include <mt-plat/cpu_ctrl.h>
+#include <topo_ctrl.h>
 #include <linux/pm_qos.h>
 #include <helio-dvfsrc-opp.h>
 
@@ -102,9 +103,9 @@
 struct regulator *regu_buck;
 
 /* begin modify for unlock speed */
-struct ppm_limit_data fingerprint_freq_to_set[BSP_CERVINO_CLUSTER_NUMBERS];
-struct ppm_limit_data fingerprint_freq_to_release[BSP_CERVINO_CLUSTER_NUMBERS];
-static struct pm_qos_request fpc_fingerprint_ddr_req;
+struct cpu_ctrl_data fingerprint_freq_to_set[BSP_CERVINO_CLUSTER_NUMBERS];
+struct cpu_ctrl_data fingerprint_freq_to_release[BSP_CERVINO_CLUSTER_NUMBERS];
+static struct mtk_pm_qos_request fpc_fingerprint_ddr_req;
 /* end modify for unlock speed */
 
 #ifdef CONFIG_SPI_MT65XX
@@ -403,7 +404,7 @@ static int fpc_fingerprint_freq_set(void)
 	int i, cluster_num;
 
 	printk("fpc_fingerprint_freq_set\n");
-	cluster_num = arch_get_nr_clusters();
+	cluster_num = topo_ctrl_get_nr_clusters();
 	if (cluster_num > BSP_CERVINO_CLUSTER_NUMBERS)
 		cluster_num = BSP_CERVINO_CLUSTER_NUMBERS;
 
@@ -427,7 +428,7 @@ static int fpc_fingerprint_freq_release(void)
 	int i, cluster_num;
 
 	printk("fpc_fingerprint_freq_release\n");
-	cluster_num = arch_get_nr_clusters();
+	cluster_num = topo_ctrl_get_nr_clusters();
 	if (cluster_num > BSP_CERVINO_CLUSTER_NUMBERS)
 		cluster_num = BSP_CERVINO_CLUSTER_NUMBERS;
 
@@ -448,14 +449,14 @@ static int fpc_fingerprint_freq_release(void)
 static int fpc_fingerprint_vcorefs_hold(void)
 {
 	printk("fpc_fingerprint_vcorefs_hold\n");
-	pm_qos_update_request(&fpc_fingerprint_ddr_req, DDR_OPP_0);
+	mtk_pm_qos_update_request(&fpc_fingerprint_ddr_req, DDR_OPP_0);
 	return 0;
 }
 
 static int fpc_fingerprint_vcorefs_release(void)
 {
 	printk("fpc_fingerprint_vcorefs_release\n");
-	pm_qos_update_request(&fpc_fingerprint_ddr_req, DDR_OPP_UNREQ);
+	mtk_pm_qos_update_request(&fpc_fingerprint_ddr_req, DDR_OPP_UNREQ);
 	return 0;
 }
 
@@ -681,7 +682,7 @@ static int fpc1022_platform_probe(struct platform_device *pldev)
 	enable_irq_wake(fpc1022->irq_num);
 	fpc1022->ttw_wl = wakeup_source_register(dev, "fpc_ttw_wl");
 	/* begin modify for unlock speed */
-	pm_qos_add_request(&fpc_fingerprint_ddr_req, PM_QOS_DDR_OPP, PM_QOS_DDR_OPP_DEFAULT_VALUE);
+	mtk_pm_qos_add_request(&fpc_fingerprint_ddr_req, MTK_PM_QOS_DDR_OPP, MTK_PM_QOS_DDR_OPP_DEFAULT_VALUE);
 	/* end modify for unlock speed */
 
 
