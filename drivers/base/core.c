@@ -528,6 +528,7 @@ static void device_link_wait_for_optional_supplier(struct device *consumer)
 static void device_link_add_missing_supplier_links(void)
 {
 	struct device *dev, *tmp;
+	static unsigned int retry_count;
 
 	mutex_lock(&wfs_lock);
 	list_for_each_entry_safe(dev, tmp, &wait_for_suppliers,
@@ -537,7 +538,10 @@ static void device_link_add_missing_supplier_links(void)
 			list_del_init(&dev->links.needs_suppliers);
 		else if (ret != -ENODEV)
 			dev->links.need_for_probe = false;
+		else if (retry_count > 4)
+			list_del_init(&dev->links.needs_suppliers);
 	}
+	++retry_count;
 	mutex_unlock(&wfs_lock);
 }
 
