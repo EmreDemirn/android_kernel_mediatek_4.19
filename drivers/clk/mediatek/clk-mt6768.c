@@ -2569,7 +2569,10 @@ static int mtk_camsys_init(struct platform_device *pdev)
 	void __iomem *base;
 	int r;
 	struct device_node *node = pdev->dev.of_node;
-	
+
+	if (cam_base)
+		return 0;
+
 	base = of_iomap(node, 0);
 	if (!base) {
 		pr_notice("%s(): ioremap failed\n", __func__);
@@ -2598,6 +2601,38 @@ static int mtk_camsys_init(struct platform_device *pdev)
 	return r;
 }
 
+static void __init mtk_camsys_init_early(struct device_node *node)
+{
+	struct clk_onecell_data *clk_data;
+	void __iomem *base;
+	int r;
+
+	base = of_iomap(node, 0);
+	if (!base) {
+		pr_notice("%s(): ioremap failed\n", __func__);
+		return;
+	}
+	clk_data = mtk_alloc_clk_data(CLK_CAM_NR_CLK);
+	if (!clk_data) {
+		pr_notice("%s(): alloc clk data failed\n", __func__);
+		return;
+	}
+
+	mtk_clk_register_gates(node, cam_clks, ARRAY_SIZE(cam_clks), clk_data);
+
+	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
+	if (r) {
+		pr_notice("%s(): could not register clock provider: %d\n",
+			  __func__, r);
+		kfree(clk_data);
+	}
+	cam_base = base;
+
+#if (!MT_CG_ENABLE)
+	clk_writel(CAMSYS_CG_CLR, CAMSYS_DISABLE_CG);
+#endif
+}
+CLK_OF_DECLARE(mtk_camsys, "mediatek,camsys", mtk_camsys_init_early);
 
 static int mtk_imgsys_init(struct platform_device *pdev)
 {
@@ -2605,6 +2640,9 @@ static int mtk_imgsys_init(struct platform_device *pdev)
 	void __iomem *base;
 	struct device_node *node = pdev->dev.of_node;
 	int r;
+
+	if (img_base)
+		return 0;
 
 	base = of_iomap(node, 0);
 	if (!base) {
@@ -2634,6 +2672,38 @@ static int mtk_imgsys_init(struct platform_device *pdev)
 	return r;
 }
 
+static void __init mtk_imgsys_init_early(struct device_node *node)
+{
+	struct clk_onecell_data *clk_data;
+	void __iomem *base;
+	int r;
+
+	base = of_iomap(node, 0);
+	if (!base) {
+		pr_notice("%s(): ioremap failed\n", __func__);
+		return;
+	}
+	clk_data = mtk_alloc_clk_data(CLK_IMG_NR_CLK);
+	if (!clk_data) {
+		pr_notice("%s(): alloc clk data failed\n", __func__);
+		return;
+	}
+
+	mtk_clk_register_gates(node, img_clks, ARRAY_SIZE(img_clks), clk_data);
+
+	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
+	if (r) {
+		pr_notice("%s(): could not register clock provider: %d\n",
+			  __func__, r);
+		kfree(clk_data);
+	}
+	img_base = base;
+
+#if (!MT_CG_ENABLE)
+	clk_writel(IMG_CG_CLR, IMG_DISABLE_CG);
+#endif
+}
+CLK_OF_DECLARE(mtk_imgsys, "mediatek,imgsys", mtk_imgsys_init_early);
 
 static int mtk_gce_init(struct platform_device *pdev)
 {
@@ -3446,7 +3516,7 @@ static const struct of_device_id of_match_clk_mt6768[] = {
 	},{
 		.compatible = "mediatek,audio",
 		.data = mtk_audio_init,
-	},{
+ 	},{
 		.compatible = "mediatek,mt6768-camsys",
 		.data = mtk_camsys_init,
 	},{
