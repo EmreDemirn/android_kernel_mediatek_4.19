@@ -14,6 +14,7 @@
 #include "tpd.h"
 #include <linux/slab.h>
 #include <linux/device.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/miscdevice.h>
 #include <linux/device.h>
 #include <linux/slab.h>
