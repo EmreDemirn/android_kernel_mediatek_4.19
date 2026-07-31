@@ -9900,7 +9900,7 @@ static signed int ISP_release(
 	ISP_WR32(CAM_REG_TG_VF_CON(ISP_CAM_B_IDX), Reg);
 
 
-	for (i = ISP_CAMSV0_IDX; i <= ISP_CAMSV3_IDX; i++) {
+	for (i = ISP_CAMSV0_IDX; i <= ISP_CAMSV3_IDX && i < nr_isp_devs; i++) {
 		Reg = ISP_RD32(CAM_REG_TG_VF_CON(i));
 		Reg &= 0xfffffffE;
 		ISP_WR32(CAM_REG_TG_VF_CON(i), Reg);
