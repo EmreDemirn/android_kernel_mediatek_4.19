@@ -8,6 +8,7 @@
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
 #include <linux/of_address.h>
+#include <linux/of_platform.h>
 #include <linux/mfd/syscon.h>
 #include <linux/regmap.h>
 
@@ -698,6 +699,46 @@ static void mt_usb_enable(struct musb *musb)
 	#endif
 
 	flags = musb_readl(musb->mregs, USB_L1INTM);
+
+	/* 4.14 uses usb_phy_recover(), 4.19 relies on phy-mtk-tphy
+	 * Backport it :D
+	 */
+	if (glue && glue->phy) {
+		int rc1, rc2;
+
+		rc1 = phy_power_on(glue->phy);
+		rc2 = phy_set_mode(glue->phy, PHY_MODE_USB_DEVICE);
+		pr_info("[MUSB] %s: phy_power_on=%d phy_set_mode=%d\n",
+			__func__, rc1, rc2);
+	} else {
+		struct device_node *phy_np, *tphy_np;
+
+		pr_info("[MUSB] %s: NO PHY (glue=%p, phy=%p)\n",
+			__func__, glue, glue ? glue->phy : NULL);
+
+		phy_np = of_parse_phandle(mtk_musb->controller->of_node,
+					  "phys", 0);
+		pr_info("[MUSB] phy phandle: %s\n",
+			phy_np ? phy_np->full_name : "NULL");
+
+		tphy_np = of_find_compatible_node(NULL, NULL,
+						 "mediatek,generic-tphy-v1");
+		pr_info("[MUSB] tphy node: %s, np=%p\n",
+			tphy_np ? tphy_np->full_name : "NULL", tphy_np);
+
+		if (tphy_np) {
+			struct platform_device *tphy_pdev;
+
+			tphy_pdev = of_find_device_by_node(tphy_np);
+			pr_info("[MUSB] tphy pdev: %s\n",
+				tphy_pdev ? dev_name(&tphy_pdev->dev) : "NULL");
+			if (tphy_pdev)
+				pr_info("[MUSB] tphy drvdata=%p\n",
+					platform_get_drvdata(tphy_pdev));
+		}
+		if (phy_np)
+			of_node_put(phy_np);
+	}
 
 	/* update musb->power & mtk_usb_power in the same time */
 	musb->power = true;

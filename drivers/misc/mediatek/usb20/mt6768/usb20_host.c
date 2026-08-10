@@ -153,6 +153,49 @@ static void _set_vbus(int is_on)
 	}
 }
 
+static u32 id_usb;
+void kick_usb_vbus_sm(void)
+{
+	u16 vendorid, productid;
+
+	pr_err("func kick_usb_vbus_sm\n");
+	vendorid = id_usb >> 16;
+	productid = (u16)id_usb;
+	pr_err("func kick_usb_vbus_sm pid = %04x, vid = %04x\n",
+	       vendorid, productid);
+	if (((vendorid == 0x2717) || (vendorid == 0x12d1) ||
+	     (vendorid == 0x0bda)) &&
+	    ((productid == 0x3801) || (productid == 0x3802) ||
+	     (productid == 0x3803) || (productid == 0x3a07) ||
+	     (productid == 0x492f))) {
+		pr_err("func kick_usb_vbus_sm vbus off and on\n");
+		_set_vbus(0);
+		mdelay(1000);
+		_set_vbus(1);
+	}
+}
+
+int vbus_force_on;
+static int set_vbus_force_on(const char *val, const struct kernel_param *kp)
+{
+	int option;
+	int rv;
+
+	rv = kstrtoint(val, 10, &option);
+	if (rv != 0)
+		return rv;
+
+	pr_err("test set vbus off and on\n");
+	kick_usb_vbus_sm();
+	return 0;
+}
+static struct kernel_param_ops vbus_force_on_param_ops = {
+	.set = set_vbus_force_on,
+	.get = param_get_int,
+};
+module_param_cb(vbus_force_on, &vbus_force_on_param_ops,
+		&vbus_force_on, 0644);
+
 int mt_usb_get_vbus_status(struct musb *musb)
 {
 #if 1
