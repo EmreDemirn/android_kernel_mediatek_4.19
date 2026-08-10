@@ -408,9 +408,15 @@ unlock_and_return:
  */
 static int ged_pdrv_probe(struct platform_device *pdev)
 {
+	GED_LOGI("@%s: ged platform device probed (no-op)\n", __func__);
+	return 0;
+}
+
+static int ged_full_init(void)
+{
 	int err;
 
-	GED_LOGI("@%s: start to probe ged driver\n", __func__);
+	GED_LOGI("@%s: start to init ged core\n", __func__);
 
 	if (proc_create(GED_DRIVER_DEVICE_NAME, 0644, NULL, &ged_fops)
 		== NULL) {
@@ -531,7 +537,7 @@ static int ged_pdrv_probe(struct platform_device *pdev)
 	}
 #endif /* CONFIG_MTK_GPU_OPP_STATS_SUPPORT */
 
-	GED_LOGI("@%s: ged driver probe done\n", __func__);
+	GED_LOGI("@%s: ged core init done\n", __func__);
 
 ERROR:
 	return err;
@@ -604,17 +610,26 @@ static int ged_init(void)
 
 	GED_LOGI("@%s: start to initialize ged driver\n", __func__);
 
-	/* register platform driver */
+	err = ged_full_init();
+	if (unlikely(err != GED_OK)) {
+		GED_LOGE("@%s: ged core init failed (%d)\n", __func__, err);
+		goto ERROR;
+	}
+
+	/* register platform driver (no-op) */
 	err = platform_driver_register(&g_ged_pdrv);
 	if (err) {
 		GED_LOGE("@%s: failed to register ged driver\n", __func__);
-		goto ERROR;
+		err = GED_OK;
 	}
 
 	GED_LOGI("@%s: ged driver init done\n", __func__);
 
+	return 0;
+
 ERROR:
-	return err;
+	ged_exit();
+	return -EFAULT;
 }
 #ifdef GED_MODULE_LATE_INIT
 late_initcall(ged_init);
