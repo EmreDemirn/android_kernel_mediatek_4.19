@@ -10,9 +10,13 @@
 #include <platform/disp_drv_platform.h>
 #else
 #include <linux/delay.h>
+#include <linux/types.h>
 /* #include <mach/mt_gpio.h> */
 #endif
 enum LCM_DSI_MODE_CON lcm_dsi_mode;
+
+bool nvt_gesture_flag __weak;
+bool fts_gesture_flag __weak;
 
 /* used to identify float ID PIN status */
 #define LCD_HW_ID_STATUS_LOW      0
@@ -21,6 +25,18 @@ enum LCM_DSI_MODE_CON lcm_dsi_mode;
 #define LCD_HW_ID_STATUS_ERROR  0x03
 
 struct LCM_DRIVER *lcm_driver_list[] = {
+#if defined(NT36672A_FHDP_DSI_VDO_TIANMA_G6)
+	&nt36672A_fhdp_dsi_vdo_tianma_lcm_drv_G6,
+#endif
+#if defined(FT8719_FHDP_DSI_VDO_XINLI)
+	&ft8719_fhdp_dsi_vdo_xinli_lcm_drv,
+#endif
+#if defined(NT36672A_FHDP_DSI_VDO_TIANMA)
+	&nt36672A_fhdp_dsi_vdo_tianma_lcm_drv,
+#endif
+#if defined(NT36672D_FHDP_DSI_VDO_TIANMA)
+	&nt36672D_fhdp_dsi_vdo_tianma_lcm_drv,
+#endif
 #if defined(HX83102P_WXGA_VDO_INCELL_BOE)
 	&hx83102p_wxga_vdo_incell_boe_lcm_drv,
 #endif
