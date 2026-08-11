@@ -379,6 +379,18 @@
 #define OV16A10_SENSOR_ID                       0x561641
 #define GC02M1B_SENSOR_ID                       0x02e0
 
+/* Xiaomi MT6768 merlin sensors */
+#define OV13B10_SUNNY_SENSOR_ID                 0x560D43
+#define OV2180_SENSOR_ID                        0x2682
+#define OV2180_SUNNY_SENSOR_ID                  0x2681
+#define OV2680_SUNNY_SENSOR_ID                  0x2680
+#define S5KGM1SP_SENSOR_ID                      0x08d1
+#define S5KGM1SP_SUNNY_SENSOR_ID                0x08d2
+#define S5K4H7YX_SENSOR_ID                      0x487B
+#define S5K4H7YX_SUNNY_SENSOR_ID                0x487C
+#define GC02M1_MACRO_SENSOR_ID                  0x02E2
+#define GC02M1_MACRO_SUNNY_SENSOR_ID            0x02E3
+
 /* CAMERA DRIVER NAME */
 #define CAMERA_HW_DEVNAME                       "kd_camera_hw"
 /* SENSOR DEVICE DRIVER NAME */
@@ -603,6 +615,18 @@
 #define SENSOR_DRVNAME_IMX355_MIPI_RAW          "imx355_mipi_raw"
 #define SENSOR_DRVNAME_OV13B10_MIPI_RAW         "ov13b10_mipi_raw"
 #define SENSOR_DRVNAME_OV02B10_MIPI_RAW         "ov02b10_mipi_raw"
+
+/* Xiaomi MT6768 merlin sensor driver names */
+#define SENSOR_DRVNAME_OV13B10_SUNNY_MIPI_RAW          "ov13b10_sunny_mipi_raw"
+#define SENSOR_DRVNAME_OV2180_MIPI_RAW                 "ov2180_mipi_raw"
+#define SENSOR_DRVNAME_OV2180_SUNNY_MIPI_RAW           "ov2180_sunny_mipi_raw"
+#define SENSOR_DRVNAME_OV2680_SUNNY_MIPI_RAW           "ov2680_sunny_mipi_raw"
+#define SENSOR_DRVNAME_S5KGM1SP_MIPI_RAW               "s5kgm1sp_mipi_raw"
+#define SENSOR_DRVNAME_S5KGM1SP_SUNNY_MIPI_RAW         "s5kgm1sp_sunny_mipi_raw"
+#define SENSOR_DRVNAME_S5K4H7YX_MIPI_RAW               "s5k4h7yx_mipi_raw"
+#define SENSOR_DRVNAME_S5K4H7YX_SUNNY_MIPI_RAW         "s5k4h7yx_sunny_mipi_raw"
+#define SENSOR_DRVNAME_GC02M1_MACRO_MIPI_RAW           "gc02m1_macro_mipi_raw"
+#define SENSOR_DRVNAME_GC02M1_MACRO_SUNNY_MIPI_RAW     "gc02m1_macro_sunny_mipi_raw"
 
 /******************************************************************************
  *
