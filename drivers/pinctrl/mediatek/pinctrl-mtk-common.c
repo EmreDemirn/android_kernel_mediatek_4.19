@@ -856,6 +856,9 @@ static int mtk_gpio_set_config(struct gpio_chip *chip, unsigned offset,
 	if (pinconf_to_config_param(config) != PIN_CONFIG_INPUT_DEBOUNCE)
 		return -ENOTSUPP;
 
+	if (!pctl->eint)
+		return -ENOTSUPP;
+
 	pin = pctl->devdata->pins + offset;
 	if (pin->eint.eintnum == NO_EINT_SUPPORT)
 		return -EINVAL;

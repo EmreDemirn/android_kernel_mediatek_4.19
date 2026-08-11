@@ -403,9 +403,17 @@ int mtk_eint_set_debounce(struct mtk_eint *eint, unsigned long eint_num,
 						     64000, 128000, 256000};
 	struct irq_data *d;
 
+	if (!eint || !eint->domain || !eint->regs || !eint->base)
+		return -ENOTSUPP;
+
 	virq = irq_find_mapping(eint->domain, eint_num);
+	if (!virq)
+		return -EINVAL;
+
 	eint_offset = (eint_num % 4) * 8;
 	d = irq_get_irq_data(virq);
+	if (!d)
+		return -EINVAL;
 
 	set_offset = (eint_num / 4) * 4 + eint->regs->dbnc_set;
 	clr_offset = (eint_num / 4) * 4 + eint->regs->dbnc_clr;
@@ -451,6 +459,9 @@ EXPORT_SYMBOL_GPL(mtk_eint_set_debounce);
 int mtk_eint_find_irq(struct mtk_eint *eint, unsigned long eint_n)
 {
 	int irq;
+
+	if (!eint || !eint->domain)
+		return -ENOTSUPP;
 
 	irq = irq_find_mapping(eint->domain, eint_n);
 	if (!irq)
