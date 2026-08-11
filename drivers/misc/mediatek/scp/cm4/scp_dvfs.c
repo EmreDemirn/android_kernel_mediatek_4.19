@@ -392,6 +392,10 @@ uint32_t scp_get_freq(void)
 	uint32_t sum = 0;
 	uint32_t return_freq = 0;
 
+	/* dvfs table may be absent if scp_dvfs probe failed */
+	if (!dvfs || !dvfs->opp || !dvfs->scp_opp_num)
+		return 0;
+
 	/*
 	 * calculate scp frequence
 	 */
@@ -1747,6 +1751,8 @@ fail:
 	dvfs = NULL;
 	kfree(buf);
 	kfree(sd);
+	/* disable DVFS so scp_request_freq() becomes a no-op */
+	scp_dvfs_flag = -1;
 	WARN_ON(1);
 
 	return -1;

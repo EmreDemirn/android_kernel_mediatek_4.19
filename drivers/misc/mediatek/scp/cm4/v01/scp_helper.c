@@ -1888,6 +1888,28 @@ static int scpsys_device_remove(struct platform_device *dev)
 	return 0;
 }
 
+static void scpsys_iomap_fallback(void)
+{
+	struct device_node *node;
+
+	if (scpreg.scpsys)
+		return;
+
+	node = of_find_compatible_node(NULL, NULL, "mediatek,scpinfra");
+	if (!node)
+		node = of_find_compatible_node(NULL, NULL, "mediatek,scpsys");
+	if (!node) {
+		pr_err("[SCP] scpsys fallback node missing\n");
+		return;
+	}
+
+	scpreg.scpsys = of_iomap(node, 0);
+	of_node_put(node);
+	pr_notice("[SCP] scpreg.scpsys fallback = %p\n", scpreg.scpsys);
+	if (!scpreg.scpsys)
+		pr_err("[SCP] scpsys fallback iomap failed\n");
+}
+
 static const struct of_device_id scp_of_ids[] = {
 	{ .compatible = "mediatek,scp", },
 	{}
@@ -1907,6 +1929,7 @@ static struct platform_driver mtk_scp_device = {
 
 static const struct of_device_id scpsys_of_ids[] = {
 	{ .compatible = "mediatek,scpinfra", },
+	{ .compatible = "mediatek,scpsys", },
 	{}
 };
 
@@ -1966,6 +1989,7 @@ static int __init scp_init(void)
 		goto err_1;
 	}
 
+	scpsys_iomap_fallback();
 	if(scpreg.scpsys == 0) {
 		pr_err("[SCP] skip the scpsys probe\n");
 		goto err_1;
@@ -2155,5 +2179,3 @@ late_initcall(scp_late_init);
 MODULE_DESCRIPTION("MEDIATEK Module SCP driver");
 MODULE_AUTHOR("McInnis Yu<mcinnis.yu@mediatek.com>");
 MODULE_LICENSE("GPL");
-
-
