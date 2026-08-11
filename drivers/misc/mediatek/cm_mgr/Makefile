@@ -27,4 +27,4 @@ mtk_cm_mgr-y = mtk_cm_mgr_common.o
 mtk_cm_mgr-${CONFIG_MTK_CM_MGR_MT6779} += mtk_cm_mgr_mt6779.o
 mtk_cm_mgr-${CONFIG_MACH_MT6761} += mtk_cm_mgr_mt6761.o
 mtk_cm_mgr-${CONFIG_MACH_MT6765} += mtk_cm_mgr_mt6765.o
-
+mtk_cm_mgr-${CONFIG_MACH_MT6768} += mtk_cm_mgr_mt6768.o
