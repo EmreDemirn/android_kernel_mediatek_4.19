@@ -44,6 +44,7 @@
 #include "scp_dvfs.h"
 #include "dvfsrc-exp.h"
 #include "mtk_spm_resource_req.h"
+#include <linux/err.h>
 
 #if (defined(CONFIG_MACH_MT6781)  \
 	||defined(CONFIG_MACH_MT6768) || defined(CONFIG_MACH_MT6771))
@@ -589,7 +590,8 @@ void wait_scp_dvfs_init_done(void)
 		count++;
 		if (count > 3000) {
 			pr_err("SCP dvfs driver init fail\n");
-			WARN_ON(1);
+			WARN_ON_ONCE(1);
+			break;
 		}
 	}
 }
@@ -602,7 +604,19 @@ int scp_pll_ctrl_set(unsigned int pll_ctrl_flag, unsigned int pll_sel)
 
 	pr_debug("%s(%d, %d)\n", __func__, pll_ctrl_flag, pll_sel);
 
+	if (!mt_scp_pll || IS_ERR_OR_NULL(mt_scp_pll->clk_mux)) {
+		pr_notice("%s skipped: SCP PLL clocks are not ready\n",
+			  __func__);
+		return -ENODEV;
+	}
+
 	if (pll_sel != CLK_26M) {
+		if (!dvfs || !dvfs->opp) {
+			pr_notice("%s skipped: SCP DVFS data is not ready\n",
+				  __func__);
+			return -ENODEV;
+		}
+
 		idx = scp_get_freq_idx(pll_sel);
 		if (idx < 0) {
 			pr_notice("invalid idx %d\n", idx);
@@ -633,12 +647,19 @@ int scp_pll_ctrl_set(unsigned int pll_ctrl_flag, unsigned int pll_sel)
 			pr_debug("no need to do clk_prepare_enable()\n");
 		}
 
-		if (pll_sel == CLK_26M)
+		if (pll_sel == CLK_26M) {
 			/* default boot-up clk : 26 MHz */
+			if (!mt_scp_pll->pll_num ||
+			    IS_ERR_OR_NULL(mt_scp_pll->clk_pll[0])) {
+				pr_notice("%s skipped: 26M parent is not ready\n",
+					  __func__);
+				return -ENODEV;
+			}
 			ret = clk_set_parent(mt_scp_pll->clk_mux,
 					mt_scp_pll->clk_pll[0]);
-		else if (idx >= 0 && idx < dvfs->scp_opp_num
-				&& idx < mt_scp_pll->pll_num)
+		} else if (idx >= 0 && idx < dvfs->scp_opp_num
+				&& idx < mt_scp_pll->pll_num
+				&& !IS_ERR_OR_NULL(mt_scp_pll->clk_pll[mux_idx]))
 			ret = clk_set_parent(mt_scp_pll->clk_mux,
 					mt_scp_pll->clk_pll[mux_idx]);
 		else {
@@ -1720,8 +1741,10 @@ pass:
 	return 0;
 fail:
 	kfree(mt_scp_pll);
+	mt_scp_pll = NULL;
 	kfree(opp);
 	kfree(dvfs);
+	dvfs = NULL;
 	kfree(buf);
 	kfree(sd);
 	WARN_ON(1);
@@ -1819,4 +1842,3 @@ void __exit scp_dvfs_exit(void)
 	platform_driver_unregister(&mt_scp_dvfs_pdrv);
 	platform_device_unregister(&mt_scp_dvfs_pdev);
 }
-
