@@ -1,7 +1,16 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (c) 2019 MediaTek Inc.
-*/
+ * Copyright (C) 2018 MediaTek Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ */
 
 &main_pmic {
 	compatible = "mediatek,mt6358-pmic";
@@ -182,8 +191,7 @@
 			     <INT_BAT_H IRQ_TYPE_LEVEL_HIGH>,
 			     <INT_BAT_L IRQ_TYPE_LEVEL_HIGH>,
 			     <INT_FG_CUR_H IRQ_TYPE_LEVEL_HIGH>,
-			     <INT_FG_CUR_L IRQ_TYPE_LEVEL_HIGH>,
-			     <INT_CHRDET_EDGE IRQ_TYPE_EDGE_BOTH>;
+			     <INT_FG_CUR_L IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "pwrkey",
 				  "pwrkey_r",
 				  "homekey",
@@ -191,8 +199,7 @@
 				  "bat_h",
 				  "bat_l",
 				  "fg_cur_h",
-				  "fg_cur_l",
-				  "chrdet_edge";
+				  "fg_cur_l";
 	};
 
 	pmic_auxadc: mt635x-auxadc {
@@ -246,20 +253,6 @@
 			channel = <AUXADC_VBIF>;
 			resistance-ratio = <2 1>;
 		};
-	};
-
-	mtk_ts_pmic: mtk_ts_pmic {
-		compatible = "mediatek,mtk_ts_pmic";
-		io-channels =
-			<&pmic_auxadc AUXADC_CHIP_TEMP>,
-			<&pmic_auxadc AUXADC_VCORE_TEMP>,
-			<&pmic_auxadc AUXADC_VPROC_TEMP>;
-		io-channel-names =
-			"pmic_chip_temp",
-			"pmic_buck1_temp",
-			"pmic_buck2_temp";
-		interconnects = <&pmic_auxadc 1>;
-		#interconnect-cells = <1>;
 	};
 
 	mt6358regulator: mt6358regulator {
@@ -338,17 +331,18 @@
 			regulator-enable-ramp-delay = <60>;
 		};
 		mt_pmic_vrf12_ldo_reg: ldo_vrf12 {
+			compatible = "regulator-fixed";
 			regulator-name = "vrf12";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1200000>;
 			regulator-enable-ramp-delay = <120>;
 		};
 		mt_pmic_vio18_ldo_reg: ldo_vio18 {
+			compatible = "regulator-fixed";
 			regulator-name = "vio18";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
 			regulator-enable-ramp-delay = <2700>;
-			regulator-always-on;
 		};
 		mt_pmic_vusb_ldo_reg: ldo_vusb {
 			regulator-name = "vusb";
@@ -357,6 +351,7 @@
 			regulator-enable-ramp-delay = <270>;
 		};
 		mt_pmic_vcamio_ldo_reg: ldo_vcamio {
+			compatible = "regulator-fixed";
 			regulator-name = "vcamio";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
@@ -369,12 +364,14 @@
 			regulator-enable-ramp-delay = <270>;
 		};
 		mt_pmic_vcn18_ldo_reg: ldo_vcn18 {
+			compatible = "regulator-fixed";
 			regulator-name = "vcn18";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
 			regulator-enable-ramp-delay = <270>;
 		};
 		mt_pmic_vfe28_ldo_reg: ldo_vfe28 {
+			compatible = "regulator-fixed";
 			regulator-name = "vfe28";
 			regulator-min-microvolt = <2800000>;
 			regulator-max-microvolt = <2800000>;
@@ -387,6 +384,7 @@
 			regulator-enable-ramp-delay = <240>;
 		};
 		mt_pmic_vcn28_ldo_reg: ldo_vcn28 {
+			compatible = "regulator-fixed";
 			regulator-name = "vcn28";
 			regulator-min-microvolt = <2800000>;
 			regulator-max-microvolt = <2800000>;
@@ -405,6 +403,7 @@
 			regulator-enable-ramp-delay = <240>;
 		};
 		mt_pmic_vxo22_ldo_reg: ldo_vxo22 {
+			compatible = "regulator-fixed";
 			regulator-name = "vxo22";
 			regulator-min-microvolt = <2200000>;
 			regulator-max-microvolt = <2200000>;
@@ -417,6 +416,7 @@
 			regulator-enable-ramp-delay = <270>;
 		};
 		mt_pmic_vaux18_ldo_reg: ldo_vaux18 {
+			compatible = "regulator-fixed";
 			regulator-name = "vaux18";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
@@ -429,6 +429,7 @@
 			regulator-enable-ramp-delay = <60>;
 		};
 		mt_pmic_vbif28_ldo_reg: ldo_vbif28 {
+			compatible = "regulator-fixed";
 			regulator-name = "vbif28";
 			regulator-min-microvolt = <2800000>;
 			regulator-max-microvolt = <2800000>;
@@ -453,18 +454,21 @@
 			regulator-enable-ramp-delay = <60>;
 		};
 		mt_pmic_vio28_ldo_reg: ldo_vio28 {
+			compatible = "regulator-fixed";
 			regulator-name = "vio28";
 			regulator-min-microvolt = <2800000>;
 			regulator-max-microvolt = <2800000>;
 			regulator-enable-ramp-delay = <270>;
 		};
 		mt_pmic_va12_ldo_reg: ldo_va12 {
+			compatible = "regulator-fixed";
 			regulator-name = "va12";
 			regulator-min-microvolt = <1200000>;
 			regulator-max-microvolt = <1200000>;
 			regulator-enable-ramp-delay = <270>;
 		};
 		mt_pmic_vrf18_ldo_reg: ldo_vrf18 {
+			compatible = "regulator-fixed";
 			regulator-name = "vrf18";
 			regulator-min-microvolt = <1800000>;
 			regulator-max-microvolt = <1800000>;
@@ -495,12 +499,14 @@
 			regulator-enable-ramp-delay = <60>;
 		};
 		mt_pmic_vldo28_ldo_reg: ldo_vldo28 {
+			compatible = "regulator-fixed";
 			regulator-name = "vldo28";
 			regulator-min-microvolt = <2800000>;
-			regulator-max-microvolt = <3000000>;
+			regulator-max-microvolt = <2800000>;
 			regulator-enable-ramp-delay = <270>;
 		};
 		mt_pmic_vaud28_ldo_reg: ldo_vaud28 {
+			compatible = "regulator-fixed";
 			regulator-name = "vaud28";
 			regulator-min-microvolt = <2800000>;
 			regulator-max-microvolt = <2800000>;
@@ -513,28 +519,16 @@
 			regulator-enable-ramp-delay = <540>;
 		};
 		mt_pmic_va09_ldo_reg: ldo_va09 {
+			compatible = "regulator-fixed";
 			regulator-name = "va09";
 			regulator-min-microvolt = <900000>;
 			regulator-max-microvolt = <900000>;
 			regulator-enable-ramp-delay = <264>;
 			regulator-boot-on;
 		};
-		mt6358_vmch_eint_high: VMCH_EINT_HIGH {
-				regulator-name = "mt6358_vmch_eint_high";
-				regulator-min-microvolt = <2900000>;
-				regulator-max-microvolt = <3300000>;
-				regulator-enable-ramp-delay = <60>;
-		};
-		mt6358_vmch_eint_low: VMCH_EINT_LOW {
-				regulator-name = "mt6358_vmch_eint_low";
-				regulator-min-microvolt = <2900000>;
-				regulator-max-microvolt = <3300000>;
-				regulator-enable-ramp-delay = <60>;
-		};
 	};	/* End of mt6358regulator */
 	mt6358_rtc: mt6358_rtc {
 		compatible = "mediatek,mt6358-rtc";
-		bootmode = <&chosen>;
 		interrupts = <INT_RTC IRQ_TYPE_NONE>;
 		interrupt-names = "rtc";
 		base = <0x580>;
